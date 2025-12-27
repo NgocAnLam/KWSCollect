@@ -1,6 +1,4 @@
-// app/admin/sentences/components/CreateSentenceModal.tsx
 "use client";
-
 import { useState, useEffect } from "react";
 
 export default function CreateSentenceModal() {
@@ -9,7 +7,6 @@ export default function CreateSentenceModal() {
   const [keywords, setKeywords] = useState<string[]>([]);
   const [fetchError, setFetchError] = useState(false);
 
-  // Fetch danh sách keyword khi mở modal
   useEffect(() => {
     if (!isOpen) return;
 
@@ -25,16 +22,12 @@ export default function CreateSentenceModal() {
           return;
         }
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_SENTENCE_URL}/keywords`, {
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
+        const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/sentence/keywords`, {
+          headers: {Authorization: `Bearer ${session.accessToken}`},
         });
-
         if (!res.ok) throw new Error();
-
         const data = await res.json();
-        setKeywords(data); // data là array string
+        setKeywords(data);
       } catch (err) {
         console.error("Không tải được danh sách từ khóa:", err);
         setFetchError(true);
@@ -64,7 +57,6 @@ export default function CreateSentenceModal() {
       return;
     }
 
-    // Lấy token
     const resSession = await fetch("/api/auth/session");
     const session = await resSession.json();
 
@@ -75,7 +67,7 @@ export default function CreateSentenceModal() {
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_SENTENCE_URL}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/sentence`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

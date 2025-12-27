@@ -1,4 +1,3 @@
-// app/user/components/RecordingRow.tsx
 import { Mic, Loader2, CheckCircle, XCircle } from "lucide-react";
 import WaveformVisualizer from "./WaveformVisualizer";
 

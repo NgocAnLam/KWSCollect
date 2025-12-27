@@ -1,16 +1,27 @@
-// app/admin/components/StatsGrid.tsx
 import StatCard from "./StatCard";
 
 interface StatsGridProps {
-  pendingCount: number;
+  totalUser: number;
+  totalKeywords: number;
+  totalSentences: number;
+  totalPendingPayment: number;
 }
 
-export default function StatsGrid({ pendingCount }: StatsGridProps) {
+export default function StatsGrid({ 
+  totalUser, 
+  totalKeywords, 
+  totalSentences, 
+  totalPendingPayment 
+}: StatsGridProps) {
+
   const stats = [
-    { title: "Tổng người dùng", value: "1,245" },
-    { title: "Từ khóa đã thu", value: "3,892" },
-    { title: "Câu dài đã thu", value: "12,430" },
-    { title: "Thanh toán chờ duyệt", value: pendingCount.toString(), highlight: true },
+    { title: "Tổng người dùng", value: totalUser.toString() },
+    { title: "Tổng số audio keyword đã thu", value: totalKeywords.toString() },
+    { title: "Tổng số audio Sentence đã thu", value: totalSentences.toString() },
+    { title: "Tổng số thanh toán chờ duyệt",
+      value: totalPendingPayment.toString(),
+      highlight: totalPendingPayment > 0,
+    },
   ];
 
   return (
@@ -20,7 +31,7 @@ export default function StatsGrid({ pendingCount }: StatsGridProps) {
           key={stat.title}
           title={stat.title}
           value={stat.value}
-          highlight={stat.highlight}
+          highlight={stat.highlight ?? false}
         />
       ))}
     </div>

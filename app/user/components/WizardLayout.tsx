@@ -26,6 +26,7 @@ interface WizardLayoutProps {
   userId: number | null;
   micTestPassed: boolean;
   keywordRecordingCompleted: boolean;
+  profileValid?: boolean;
   onStepChange: (step: Step) => void;
   onBack: () => void;
   onNext: () => void;
@@ -42,6 +43,7 @@ export default function WizardLayout({
   onBack,
   onNext,
   children,
+  profileValid,
 }: WizardLayoutProps) {
   const isStepCompleted = (step: Step): boolean => {
     if (step === 1) return userId !== null;
@@ -54,20 +56,16 @@ export default function WizardLayout({
   const currentStepInfo = steps.find((s) => s.id === currentStep)!;
 
   const canGoNext =
-    (currentStep === 1 && userId) ||
+    (currentStep === 1 && (userId || profileValid)) ||
     (currentStep === 2 && micTestPassed) ||
     (currentStep === 3 && keywordRecordingCompleted) ||
     currentStep >= 4;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
-      {/* Sidebar */}
-      <aside className="md:w-80 w-full bg-white shadow-lg md:h-screen fixed md:static z-10 flex flex-col">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold text-gray-800">Thu thập dữ liệu giọng nói</h1>
-        </div>
-
-        <nav className="space-y-3 flex-1 px-6 pb-6 overflow-y-auto">
+    <div className="h-[80vh] w-full flex flex-col md:flex-row overflow-hidden bg-gray-50">
+      {/* Sidebar - Mobile: trên top, Desktop: fixed trái full height */}
+      <aside className="w-full md:w-80 bg-white shadow-lg flex flex-col h-auto md:h-full overflow-y-auto">
+        <nav className="space-y-3 flex-1 px-6 py-6">
           {steps.map((step) => {
             const completed = isStepCompleted(step.id);
             const active = currentStep === step.id;
@@ -106,66 +104,44 @@ export default function WizardLayout({
           })}
         </nav>
 
+        {/* User info - chỉ hiển thị desktop */}
         {userInfo && (
-          <div className="mt-auto p-6 pt-4 border-t border-gray-200 hidden md:block">
-            <p className="text-sm text-gray-600 mb-2">Người tham gia:</p>
+          <div className="mt-auto p-6 border-t hidden md:block">
             <p className="font-semibold text-gray-800">
               {userInfo.name || userInfo.fullName} (ID: {userId})
             </p>
-            {userInfo.age && <p className="text-sm text-gray-600">Tuổi: {userInfo.age}</p>}
-            {userInfo.gender && (
-              <p className="text-sm text-gray-600">
-                Giới tính: {userInfo.gender === "male" ? "Nam" : "Nữ"}
-              </p>
-            )}
           </div>
         )}
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 md:ml-0 pt-20 md:pt-0 p-6 md:p-10">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
-              Bước {currentStep}: {currentStepInfo.title}
-            </h2>
-            <p className="text-base md:text-lg text-gray-600">{currentStepInfo.description}</p>
-          </div>
-
-          {currentStep === 3 && !keywordRecordingCompleted && (
-            <div className="mb-8 p-5 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
-              <p className="text-amber-800 font-medium">
-                ⚠️ Bạn phải hoàn thành <strong>tất cả 50 bản ghi</strong> (10 từ khóa × 5 lần) 
-                và mọi bản ghi đều được <strong>chấp nhận</strong> thì mới có thể sang bước tiếp theo.
-              </p>
+      {/* Main Content - chiếm hết phần còn lại, full height, scroll nội dung */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-0">
+          <div className="max-w-5xl mx-auto w-full">
+            <div className="mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+                Bước {currentStep}: {currentStepInfo.title}
+              </h2>
             </div>
-          )}
 
-          <div className="mb-8 md:mb-10">
-            <div className="flex items-center justify-between mb-3 gap-2">
-              {steps.map((_, index) => (
-                <div
-                  key={index}
-                  className={`flex-1 h-3 rounded-full ${
-                    index < currentStep - 1
-                      ? "bg-green-500"
-                      : index === currentStep - 1
-                      ? "bg-blue-500"
-                      : "bg-gray-300"
-                  }`}
-                />
-              ))}
+            {currentStep === 3 && !keywordRecordingCompleted && (
+              <div className="mb-8 p-5 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
+                <p className="text-amber-800 font-medium">
+                  ⚠️ Bạn phải hoàn thành <strong>tất cả 50 bản ghi</strong> (10 từ khóa × 5 lần) 
+                  và mọi bản ghi đều được <strong>chấp nhận</strong> thì mới có thể sang bước tiếp theo.
+                </p>
+              </div>
+            )}
+
+            <div className="bg-white rounded-xl shadow-sm h-auto max-h-[90vh] p-0 overflow-auto">
+              {children}
             </div>
-            <p className="text-sm text-gray-500 text-right">
-              Bước {currentStep} / {steps.length}
-            </p>
           </div>
+        </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 md:p-8 min-h-96">
-            {children}
-          </div>
-
-          <div className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4">
+        {/* Footer buttons - fixed dưới cùng trên mobile nếu cần, nhưng ở đây giữ linh hoạt */}
+        <div className="border-t bg-gray p-0">
+          <div className="max-w-5xl mx-auto w-full flex flex-col sm:flex-row justify-between items-center gap-4 p-4">
             <button
               onClick={onBack}
               disabled={currentStep === 1}
@@ -183,7 +159,7 @@ export default function WizardLayout({
               <button
                 onClick={onNext}
                 disabled={!canGoNext}
-                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all w-full sm:w-auto ${
+                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all w-full sm:w-auto order-first sm:order-last ${
                   !canGoNext
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-blue-600 text-white hover:bg-blue-700"
@@ -193,27 +169,22 @@ export default function WizardLayout({
                 <ChevronRight size={20} />
               </button>
             ) : (
-              <button className="flex items-center justify-center gap-2 px-8 py-3 bg-green-600 text-white rounded-lg 
-                                 font-semibold hover:bg-green-700 transition-all w-full sm:w-auto">
+              <button className="flex items-center justify-center gap-2 px-8 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-all w-full sm:w-auto">
                 <CheckCircle2 size={20} />
                 Nộp và Hoàn tất
               </button>
             )}
-          </div>
 
-          {userInfo && (
-            <div className="mt-8 p-4 bg-gray-100 rounded-lg md:hidden">
-              <p className="text-sm font-medium text-gray-700">
-                {userInfo.name || userInfo.fullName} (ID: {userId})
-              </p>
-              {userInfo.age && <p className="text-sm text-gray-600">Tuổi: {userInfo.age}</p>}
-              {userInfo.gender && (
-                <p className="text-sm text-gray-600">
-                  Giới tính: {userInfo.gender === "male" ? "Nam" : "Nữ"}
+            {/* User info mobile */}
+            {userInfo && (
+              <div className="md:hidden w-full sm:w-auto text-left sm:text-center">
+                <p className="text-sm font-medium text-gray-700">
+                  {userInfo.name || userInfo.fullName} (ID: {userId})
                 </p>
-              )}
-            </div>
-          )}
+                {userInfo.age && <p className="text-sm text-gray-600">Tuổi: {userInfo.age}</p>}
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>

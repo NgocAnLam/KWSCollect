@@ -1,5 +1,3 @@
-// app/user/components/KeywordProgress.tsx
-
 interface KeywordProgressProps {
   totalCompleted: number;
   totalRecordings: number;
@@ -13,15 +11,11 @@ export default function KeywordProgress({
 }: KeywordProgressProps) {
   return (
     <div className="text-center mb-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">
-        Thu âm mẫu giọng nói
-      </h1>
       <p className="text-gray-600 mb-6">
-        Vui lòng nói rõ ràng từng từ khóa trong 2 giây. Tổng cộng{" "}
-        <strong>{totalRecordings}</strong> bản ghi.
+        (Vui lòng nói rõ từ khóa trong tối đa 2 giây. Hệ thống sẽ tự động ghi nhận. Tổng cộng{" "}
+        <strong>{totalRecordings}</strong> bản ghi)
       </p>
 
-      {/* Progress Bar */}
       <div className="max-w-2xl mx-auto mb-8">
         <div className="flex justify-between text-sm text-gray-600 mb-2">
           <span>Tiến độ tổng thể</span>

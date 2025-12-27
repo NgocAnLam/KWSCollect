@@ -8,7 +8,7 @@ import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 
 type Props = {
-  audioUrl: string | null;
+  // audioUrl: string | null;
   audioBlob: Blob | null;
   range: [number, number];
   setRange: (range: [number, number]) => void;
@@ -33,7 +33,7 @@ export default function WaveformPlayer({
   const startMarkerRef = useRef<any>(null);
   const endMarkerRef = useRef<any>(null);
 
-  const [duration, setDuration] = useState(30);
+  const [duration, setDuration] = useState(15);
   const [currentTime, setCurrentTime] = useState(0);
   const [isReady, setIsReady] = useState(false);
 
@@ -97,7 +97,7 @@ export default function WaveformPlayer({
     ws.loadBlob(audioBlob);
 
     ws.on("ready", () => {
-      const dur = ws.getDuration() || 30;
+      const dur = ws.getDuration() || 15;
       setDuration(dur);
       setIsReady(true);
       updateAllRegions(ws);
@@ -250,7 +250,10 @@ export default function WaveformPlayer({
         <div className="flex justify-between text-lg font-semibold text-gray-700">
           <span>Bắt đầu: {range[0].toFixed(2)}s</span>
           <span>Kết thúc: {range[1].toFixed(2)}s</span>
-          <span>Độ dài: {(range[1] - range[0]).toFixed(2)}s</span>
+          {/* <span>Độ dài: {(range[1] - range[0]).toFixed(2)}s</span> */}
+          <span className={range[1] - range[0] > 2 ? "text-red-600" : "text-green-600"}>
+            Độ dài: {(range[1] - range[0]).toFixed(2)}s {range[1] - range[0] > 2 && "(quá dài, cần ≤ 2s)"}
+          </span>
         </div>
       </div>
     </div>

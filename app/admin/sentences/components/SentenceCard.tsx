@@ -1,11 +1,19 @@
-// app/admin/sentences/components/SentenceCard.tsx
 "use client";
-
 import { Edit2, Trash2, Clock, AlertCircle } from "lucide-react";
 
 function getStatusBadge(used: boolean) {
-  if (used) return { label: "Đã dùng", color: "bg-orange-100 text-orange-800", icon: Clock };
-  return { label: "Chưa dùng", color: "bg-green-100 text-green-800", icon: AlertCircle };
+  if (used) 
+    return { 
+      label: "Đã dùng", 
+      color: "bg-orange-100 text-orange-800", 
+      icon: Clock 
+    };
+
+  return { 
+    label: "Chưa dùng", 
+    color: "bg-green-100 text-green-800", 
+    icon: AlertCircle 
+  };
 }
 
 function highlightKeyword(text: string, keyword: string) {
@@ -22,9 +30,7 @@ function highlightKeyword(text: string, keyword: string) {
   );
 }
 
-type Props = {
-  sentence: any;
-};
+type Props = {sentence: any};
 
 export default function SentenceCard({ sentence }: Props) {
   const status = getStatusBadge(sentence.is_used);
@@ -41,16 +47,13 @@ export default function SentenceCard({ sentence }: Props) {
       return;
     }
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_SENTENCE_URL}/${id}`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/sentence/${id}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${session.accessToken}`,
-      },
+      headers: {Authorization: `Bearer ${session.accessToken}`},
     });
     
-    if (res.ok) {
-      window.location.reload();
-    } else {
+    if (res.ok) window.location.reload();
+    else {
       const data = await res.json();
       alert(data.error || "Xóa thất bại");
     }
@@ -65,7 +68,6 @@ export default function SentenceCard({ sentence }: Props) {
       alert("Từ khóa phải nằm trong nội dung câu!");
       return;
     }
-
     const resSession = await fetch("/api/auth/session");
     const session = await resSession.json();
 
@@ -74,7 +76,7 @@ export default function SentenceCard({ sentence }: Props) {
       return;
     }
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_SENTENCE_URL}/${id}`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/sentence/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -83,9 +85,8 @@ export default function SentenceCard({ sentence }: Props) {
       body: JSON.stringify({ text: newText.trim(), keyword: newKeyword.trim() }),
     });
 
-    if (res.ok) {
-      window.location.reload();
-    } else {
+    if (res.ok) window.location.reload();
+    else {
       const data = await res.json();
       alert(data.error || "Cập nhật thất bại");
     }
@@ -99,7 +100,6 @@ export default function SentenceCard({ sentence }: Props) {
             <p className="text-xl font-medium text-gray-900 leading-relaxed mb-4">
               {highlightKeyword(sentence.text, sentence.keyword)}
             </p>
-
             <div className="flex flex-wrap gap-3 text-sm">
               <span className="text-gray-600">
                 <strong>Từ khóa:</strong>{" "}
@@ -111,9 +111,7 @@ export default function SentenceCard({ sentence }: Props) {
                 ID: <strong>#{sentence.id}</strong>
               </span>
             </div>
-          </div>
-
-          
+          </div>          
         </div>
 
         <div className="flex items-center justify-between pt-6 border-t border-gray-100">

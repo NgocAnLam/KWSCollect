@@ -1,4 +1,3 @@
-// app/admin/keywords/page.tsx
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
@@ -8,7 +7,7 @@ import CreateKeywordModal from "./components/CreateKeywordModal";
 async function getKeywords() {
   const session = await getServerSession(authOptions);
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_KEYWORD_URL}`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/keyword`, {
     headers: { Authorization: `Bearer ${session?.accessToken}` },
     cache: "no-store",
   });
@@ -27,7 +26,7 @@ async function createKeyword(formData: FormData) {
     return { error: "Từ khóa không hợp lệ" };
   }
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_KEYWORD_URL}`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/keyword`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${session.accessToken}`,
@@ -50,7 +49,7 @@ async function updateKeyword(formData: FormData) {
 
   if (!session?.accessToken || !id || !text) return;
 
-  await fetch(`${process.env.NEXT_PUBLIC_ADMIN_KEYWORD_URL}/${id}`, {
+  await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/keyword/${id}`, {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${session.accessToken}`,
@@ -67,7 +66,7 @@ async function deleteKeyword(id: number) {
   const session = await getServerSession(authOptions);
   if (!session?.accessToken) return;
 
-  await fetch(`${process.env.NEXT_PUBLIC_ADMIN_KEYWORD_URL}/${id}`, {
+  await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/keyword/${id}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${session.accessToken}` },
   });
@@ -79,8 +78,8 @@ export default async function KeywordManagement() {
   const keywords = await getKeywords();
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-8">
+    <div className="h-[80vh]">
+      <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-gray-800">Quản lý Từ khóa</h2>
         <CreateKeywordModal createKeyword={createKeyword} />
       </div>

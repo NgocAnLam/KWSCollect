@@ -9,9 +9,10 @@ type Props = {
   resetRecording: () => void;
   isPlaying: boolean;
   onPlayToggle: () => void;
+  onRecordingComplete: (blob: Blob) => void;
 };
 
-export default function RecordingControls({audioBlob, setAudioBlob, setAudioUrl, resetRecording, isPlaying, onPlayToggle,}: Props) {
+export default function RecordingControls({audioBlob, setAudioBlob, setAudioUrl, resetRecording, isPlaying, onPlayToggle, onRecordingComplete}: Props) {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
@@ -28,6 +29,7 @@ export default function RecordingControls({audioBlob, setAudioBlob, setAudioUrl,
         setAudioBlob(blob);
         setAudioUrl(url);
         stream.getTracks().forEach((track) => track.stop());
+        onRecordingComplete(blob);
       };
 
       recorder.start();
@@ -55,7 +57,7 @@ export default function RecordingControls({audioBlob, setAudioBlob, setAudioUrl,
         <button
           onClick={startRecording}
           disabled={isRecording}
-          className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-lg shadow-lg transition-all ${
+          className={`flex items-center gap-3 px-3 py-2 rounded-2xl font-semibold text-lg shadow-lg transition-all ${
             isRecording
               ? "bg-red-600 text-white animate-pulse"
               : "bg-emerald-600 text-white hover:bg-emerald-700 hover:scale-105"
@@ -68,7 +70,7 @@ export default function RecordingControls({audioBlob, setAudioBlob, setAudioUrl,
         {isRecording && (
           <button
             onClick={stopRecording}
-            className="flex items-center gap-3 px-8 py-4 bg-gray-600 text-white rounded-2xl font-semibold hover:bg-gray-700 transition shadow-lg"
+            className="flex items-center gap-3 px-3 py-2 bg-gray-600 text-white rounded-2xl font-semibold hover:bg-gray-700 transition shadow-lg"
           >
             Dừng ghi âm
           </button>
@@ -82,7 +84,7 @@ export default function RecordingControls({audioBlob, setAudioBlob, setAudioUrl,
     <div className="flex justify-center gap-6 flex-wrap">
       <button
         onClick={onPlayToggle}
-        className="flex items-center gap-3 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-semibold hover:bg-indigo-700 transition shadow-lg hover:scale-105"
+        className="flex items-center gap-3 px-3 py-2 bg-indigo-600 text-white rounded-2xl font-semibold hover:bg-indigo-700 transition shadow-lg hover:scale-105"
       >
         {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
         {isPlaying ? "Tạm dừng" : "Nghe lại bản thu"}
@@ -90,7 +92,7 @@ export default function RecordingControls({audioBlob, setAudioBlob, setAudioUrl,
 
       <button
         onClick={resetRecording}
-        className="flex items-center gap-3 px-8 py-4 bg-orange-600 text-white rounded-2xl font-semibold hover:bg-orange-700 transition shadow-lg hover:scale-105"
+        className="flex items-center gap-3 px-3 py-2 bg-orange-600 text-white rounded-2xl font-semibold hover:bg-orange-700 transition shadow-lg hover:scale-105"
       >
         <RotateCcw className="h-8 w-8" />
         Thu lại từ đầu

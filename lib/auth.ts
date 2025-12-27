@@ -14,29 +14,23 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.username || !credentials?.password) return null;
 
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_LOGIN_URL}`, {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/login`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
+            headers: {"Content-Type": "application/x-www-form-urlencoded"},
             body: new URLSearchParams({
               username: credentials.username,
               password: credentials.password,
             }),
           });
 
-          if (!res.ok) {
-            return null; // Sai username/password
-          }
-
+          if (!res.ok) return null;
           const data = await res.json();
 
-          // Backend trả về access_token
           if (data.access_token) {
             return {
-              id: "admin", // không quan trọng lắm
+              id: "admin",
               name: credentials.username,
-              accessToken: data.access_token, // lưu token để dùng sau
+              accessToken: data.access_token,
               role: "admin",
             };
           }
@@ -49,12 +43,8 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  pages: {
-    signIn: "/login", // trang login riêng
-  },
-  session: {
-    strategy: "jwt",
-  },
+  pages: {signIn: "/login"},
+  session: {strategy: "jwt"},
   callbacks: {
     async jwt({ token, user }) {
       if (user) {

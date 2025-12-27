@@ -5,17 +5,17 @@ import { Home, Key, FileText, DollarSign, CheckSquare, LogOut } from "lucide-rea
 
 const menuItems = [
   { href: "/admin", label: "Dashboard", icon: Home },
-  { href: "/admin/keywords", label: "Từ khóa", icon: Key },
-  { href: "/admin/sentences", label: "Câu dài", icon: FileText },
-  { href: "/admin/payments", label: "Thanh toán", icon: DollarSign },
-  { href: "/admin/cross-check", label: "Kiểm tra chéo", icon: CheckSquare },
+  { href: "/admin/payments", label: "Payments", icon: DollarSign },
+  { href: "/admin/keywords", label: "Keywords", icon: Key },
+  { href: "/admin/sentences", label: "Sentences", icon: FileText },
+  { href: "/admin/cross-check", label: "Cross check", icon: CheckSquare },
 ];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-indigo-800 text-white">
+    <aside className="h-[80vh] w-64 bg-indigo-800 text-white">
       <div className="p-6">
         <h2 className="text-xl font-bold">Admin Panel</h2>
       </div>

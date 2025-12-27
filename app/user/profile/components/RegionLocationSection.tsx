@@ -1,6 +1,5 @@
 import { Mic, MapPin } from 'lucide-react';
-import { REGIONS, RECORDING_LOCATIONS, RegionType } from '../constants/Constants';
-
+import { RegionType } from '../constants/Constants';
 
 interface RegionLocationSectionProps {
   region: RegionType;
@@ -19,11 +18,11 @@ export default function RegionLocationSection({
     <>
       {/* Vùng miền */}
       <div className="relative">
-        <Mic className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+        <Mic className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
         <select
           value={region}
           onChange={(e) => setRegion(e.target.value as RegionType)}
-          className="w-full pl-12 pr-10 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none appearance-none text-lg"
+          className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none appearance-none text-sm"
         >
           <option value="" disabled>Chọn vùng miền</option>
           <option value="southeast">Đông Nam Bộ</option>
@@ -38,12 +37,12 @@ export default function RegionLocationSection({
       </div>
 
       {/* Địa điểm ghi âm */}
-      <div className="relative mt-4">
-        <MapPin className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+      <div className="relative mt-3">
+        <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
         <select
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-lg"
+          className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
         >
           <option>Phòng yên tĩnh</option>
           <option>Phòng có tiếng ồn nhẹ</option>

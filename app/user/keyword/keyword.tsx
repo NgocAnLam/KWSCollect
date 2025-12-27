@@ -1,6 +1,4 @@
-// app/user/keyword.tsx
 "use client";
-
 import { Loader2 } from "lucide-react";
 import { useKeywordRecorder } from "./hooks/useKeywordRecorder";
 import KeywordProgress from "./components/KeywordProgress";
@@ -34,8 +32,6 @@ export default function KeywordRecorder({ userId, onComplete }: Props) {
     <div className="max-w-5xl mx-auto p-6">
       <KeywordProgress {...recorder} />
       <KeywordTabs {...recorder} />
-
-      {/* Truyền thêm các props cần cho nút */}
       <KeywordCard
         currentKeyword={recorder.currentKeyword}
         records={recorder.records}

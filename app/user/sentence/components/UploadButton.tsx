@@ -27,7 +27,13 @@ export default function UploadButton({
 }: Props) {
   const uploadRecording = async () => {
     if (!audioBlob || !sentenceId || !validation?.valid || !userId) {
-      alert("Vui lòng kiểm tra và đảm bảo bản thu hợp lệ trước khi upload.");
+      alert("Vui lòng đảm bảo bản thu đã được kiểm tra hợp lệ.");
+      return;
+    }
+
+    const length = range[1] - range[0];
+    if (length > 2.0) {
+      alert(`Đoạn keyword hiện tại dài ${length.toFixed(2)} giây.\n\nVui lòng kéo thanh chọn sát hơn để chỉ bao gồm đúng từ khóa cần nhấn mạnh.`);
       return;
     }
 
@@ -52,13 +58,16 @@ export default function UploadButton({
   };
 
   return (
-    <button
-      onClick={uploadRecording}
-      disabled={!validation?.valid || isUploading}
-      className="w-full py-6 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-3xl font-bold text-2xl hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-2xl flex items-center justify-center gap-5"
-    >
-      <Upload className="h-10 w-10" />
-      {isUploading ? "Đang upload..." : "Upload bản thu & Sang câu tiếp theo"}
-    </button>
+    <div className="flex justify-center">
+      <button
+        onClick={uploadRecording}
+        disabled={!validation?.valid || isUploading}
+        className="py-1 px-5 inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-3xl font-bold text-1xl hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-2xl flex items-center justify-center gap-5"
+      >
+        <Upload className="h-9 w-9" />
+        {isUploading ? "Đang upload..." : "Upload bản thu & Sang câu tiếp theo"}
+      </button>
+    </div>
+    
   );
 }

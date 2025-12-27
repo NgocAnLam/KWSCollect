@@ -1,20 +1,16 @@
-// app/admin/payments/components/PaymentsFilters.tsx
 'use client';
 
 import { useState } from "react";
 import { Search, Download } from "lucide-react";
 import PaymentsTable from "./PaymentsTable";
 
-type Props = {
-  initialData: any[];  // dữ liệu từ server
-};
+type Props = {initialData: any[]};
 
 export default function PaymentsFilters({ initialData }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const exportToCSV = () => {
-    // ... giữ nguyên hàm exportToCSV như cũ
     const headers = ["Tên", "SĐT", "Phương thức", "Thông tin nhận tiền", "Trạng thái"];
     const rows = initialData.map((u) => [
       u.name,

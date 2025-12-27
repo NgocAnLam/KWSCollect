@@ -1,9 +1,6 @@
-// app/admin/payments/components/PaymentsTable.tsx
 'use client';
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, XCircle, Clock } from "lucide-react";
 import PaymentRow from "./PaymentRow";
 
 type Props = {
@@ -35,8 +32,7 @@ export default function PaymentsTable({ initialData, searchTerm, statusFilter }:
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/admin/payment/mark-${action === "paid" ? "paid" : "rejected"}`,
-        {
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/admin/payment/mark-${action === "paid" ? "paid" : "rejected"}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ user_id: userId }),

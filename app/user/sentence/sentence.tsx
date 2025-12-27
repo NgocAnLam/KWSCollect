@@ -1,6 +1,4 @@
-// app/user/sentences/sentence.tsx
 "use client";
-
 import { useEffect, useState } from "react";
 import ProgressBar from "./components/ProgressBar";
 import SentenceDisplay from "./components/SentenceDisplay";
@@ -9,6 +7,7 @@ import WaveformPlayer from "./components/WaveformPlayer";
 import ValidationResult from "./components/ValidationResult";
 import UploadButton from "./components/UploadButton";
 import CompletionMessage from "./components/CompletionMessage";
+import axios from "axios";
 
 type Sentence = {
   id: number;
@@ -26,32 +25,23 @@ export default function SentenceRecorder({ userId }: { userId: number | null }) 
   const [isUploading, setIsUploading] = useState(false);
   const [range, setRange] = useState<[number, number]>([0, 30]);
   const [completedSentences, setCompletedSentences] = useState<Set<number>>(new Set());
-
-  // Thêm state quản lý phát lại âm thanh
+  const [frontendValidation, setFrontendValidation] = useState<'pending' | 'valid' | 'invalid'>('pending');
+  const [backendValidation, setBackendValidation] = useState<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-
   const currentSentence = assigned[currentIdx];
   const isLastSentence = currentIdx === assigned.length - 1;
   const isCompleted = currentSentence && completedSentences.has(currentSentence.id);
 
-  // Tải danh sách câu khi có userId
   useEffect(() => {
     if (!userId) return;
-
     const fetchSentences = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_USER_SENTENCE_URL}/assign/${userId}`);
-
-        if (!response.ok) {
-          throw new Error(`Lỗi ${response.status}: Không thể tải danh sách câu`);
-        }
-
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/user/sentence/assign/${userId}`);
+        if (!response.ok) throw new Error(`Lỗi ${response.status}: Không thể tải danh sách câu`);
         const data = await response.json();
         const sentences: Sentence[] = data.sentences || [];
 
-        if (sentences.length !== 10) {
-          alert(`Hệ thống chỉ phân công ${sentences.length} câu (dự kiến 10 câu)`);
-        }
+        if (sentences.length !== 10) alert(`Hệ thống chỉ phân công ${sentences.length} câu (dự kiến 10 câu)`);
 
         setAssigned(sentences);
       } catch (error) {
@@ -69,15 +59,118 @@ export default function SentenceRecorder({ userId }: { userId: number | null }) 
     }
   };
 
+  const validateFrontend = async (blob: Blob): Promise<boolean> => {
+    setFrontendValidation('pending');
+    try {
+      const arrayBuffer = await blob.arrayBuffer();
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+      const duration = audioBuffer.duration; // Độ dài âm thanh thực tế (giây)
+
+      // Kiểm tra độ dài bản thu: phải ≥ 5 giây
+      if (duration < 5) {
+        setFrontendValidation('invalid');
+        setValidation({
+          valid: false,
+          message: `Bản thu quá ngắn (${duration.toFixed(1)}s). Vui lòng đọc đầy đủ câu, bản thu cần ít nhất 5 giây.`
+        });
+        return false;
+      }
+
+      // Kiểm tra độ to của âm thanh (RMS)
+      const channelData = audioBuffer.getChannelData(0);
+      let sum = 0;
+      for (let i = 0; i < channelData.length; i++) {
+        sum += channelData[i] ** 2;
+      }
+      const rms = Math.sqrt(sum / channelData.length);
+      const isSilent = rms < 0.01; // Ngưỡng có thể điều chỉnh nếu cần
+
+      if (isSilent) {
+        setFrontendValidation('invalid');
+        setValidation({
+          valid: false,
+          message: "Bản thu quá yên lặng hoặc không có âm thanh. Vui lòng đọc to và rõ ràng hơn."
+        });
+        return false;
+      }
+
+      // Nếu qua hết các kiểm tra
+      setFrontendValidation('valid');
+      return true;
+    } catch (err) {
+      console.error("Lỗi xử lý âm thanh frontend:", err);
+      setFrontendValidation('invalid');
+      setValidation({
+        valid: false,
+        message: "Lỗi xử lý âm thanh trên trình duyệt. Vui lòng thử thu lại."
+      });
+      return false;
+    }
+  };
+
+  const validateBackend = async (blob: Blob, sentenceId: number) => {
+    setIsValidating(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", blob, "recording.webm");
+      fd.append("sentence_id", String(sentenceId));
+
+      const resp = await axios.post(`${process.env.NEXT_PUBLIC_SERVER_URL}/user/sentence/validate`, fd);
+      const result = resp.data;
+
+      setBackendValidation(result);
+      setValidation(result);
+
+      if (result.suggested_start !== undefined && result.suggested_end !== undefined) {
+        setRange([result.suggested_start, result.suggested_end]);
+      }
+
+      if (!result.valid) {
+        alert("Backend validation failed: " + result.message);
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message || "Lỗi server khi kiểm tra";
+      setValidation({ valid: false, message: msg });
+      alert("Lỗi kiểm tra backend: " + msg);
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleRecordingComplete = async (blob: Blob) => {
+    setAudioBlob(blob);
+    setAudioUrl(URL.createObjectURL(blob));
+    setValidation(null);
+    setBackendValidation(null);
+    setFrontendValidation('pending');
+    setRange([0, 15]);
+
+    const sentenceId = currentSentence?.id;
+    if (!sentenceId) return;
+
+    const frontendOk = await validateFrontend(blob);
+    if (!frontendOk) return;
+
+    await validateBackend(blob, sentenceId);
+  };
+
+  // Reset khi đổi câu
+  useEffect(() => {
+    resetRecording();
+    setFrontendValidation('pending');
+    setBackendValidation(null);
+  }, [currentIdx]);
+
   const resetRecording = () => {
     setAudioBlob(null);
     setAudioUrl(null);
     setValidation(null);
     setRange([0, 30]);
-    setIsPlaying(false); // Dừng phát khi reset
+    setIsPlaying(false);
   };
 
-  // Khi chuyển sang câu mới → reset tất cả trạng thái ghi âm và phát
   useEffect(() => {
     resetRecording();
   }, [currentIdx]);
@@ -90,20 +183,19 @@ export default function SentenceRecorder({ userId }: { userId: number | null }) 
     );
   }
 
-  // Hàm toggle play/pause – được truyền cho cả hai component con
   const handlePlayToggle = () => {
     setIsPlaying((prev) => !prev);
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-6 lg:p-10">
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+    <div className="max-w-5xl mx-auto">
+      <div className="bg-white rounded-3xl">
         {/* Progress */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white">
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-2 text-white">
           <ProgressBar current={currentIdx + 1} total={assigned.length} />
         </div>
 
-        <div className="p-8 lg:p-12 space-y-10">
+        <div className="lg:p-1 space-y-2">
           {/* Câu cần đọc */}
           <SentenceDisplay sentence={currentSentence} />
 
@@ -115,13 +207,13 @@ export default function SentenceRecorder({ userId }: { userId: number | null }) 
             resetRecording={resetRecording}
             isPlaying={isPlaying}
             onPlayToggle={handlePlayToggle}
+            onRecordingComplete={handleRecordingComplete}
           />
 
-          {/* Waveform + Slider chọn vùng (chỉ hiển thị khi đã có bản thu) */}
-          {audioUrl && (
+          {/* WaveformPlayer chỉ hiển thị khi backend validation pass */}
+          {(audioBlob && backendValidation?.valid) && (
             <WaveformPlayer
-              audioUrl={audioUrl}
-              audioBlob={audioBlob}  // ← Thêm dòng này
+              audioBlob={audioBlob}
               range={range}
               setRange={setRange}
               keyword={currentSentence?.keyword || ""}
@@ -134,13 +226,18 @@ export default function SentenceRecorder({ userId }: { userId: number | null }) 
           {audioBlob && (
             <>
               <ValidationResult
-                audioBlob={audioBlob}
-                sentenceId={currentSentence?.id}
-                validation={validation}
-                setValidation={setValidation}
-                isValidating={isValidating}
-                setIsValidating={setIsValidating}
-                setRange={setRange}
+                validation={
+                  validation || {
+                    valid: false,
+                    message: backendValidation
+                      ? validation.message
+                      : isValidating
+                      ? "Đang kiểm tra tự động với server..."
+                      : frontendValidation === 'invalid'
+                      ? "Bản thu quá yên lặng, vui lòng đọc to và rõ hơn!"
+                      : "Đang kiểm tra bản thu..."
+                  }
+                }
               />
 
               <UploadButton

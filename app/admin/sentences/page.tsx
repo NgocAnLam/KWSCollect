@@ -8,11 +8,9 @@ async function getSentences() {
   const session = await getServerSession(authOptions);
   if (!session?.accessToken) throw new Error("Unauthorized");
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_SENTENCE_URL}`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/sentence`, {
     cache: "no-store",
-    headers: {
-      Authorization: `Bearer ${session.accessToken}`,  // ← Bắt buộc phải có
-    },
+    headers: {Authorization: `Bearer ${session.accessToken}`},
   });
 
   if (!res.ok) {
@@ -20,7 +18,7 @@ async function getSentences() {
     throw new Error("Không tải được danh sách câu");
   }
 
-  return res.json();  // Backend trả về array trực tiếp → không cần .sentences
+  return res.json();
 }
 
 export default async function SentenceManagement() {

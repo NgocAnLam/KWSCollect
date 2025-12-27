@@ -13,16 +13,35 @@ export default function UserPage() {
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [userId, setUserId] = useState<number | null>(null);
   const [userInfo, setUserInfo] = useState<any>(null);
-  const [micTestPassed, setMicTestPassed] = useState(true);
-  const [keywordRecordingCompleted, setKeywordRecordingCompleted] = useState(true);
+  const [micTestPassed, setMicTestPassed] = useState(false);
+  const [keywordRecordingCompleted, setKeywordRecordingCompleted] = useState(false);
+  const [profileValid, setProfileValid] = useState(false);
+  const profileSubmitRef = React.useRef<(() => Promise<void>) | null>(null);
 
-  const goNext = () => {if (currentStep < 5) setCurrentStep((prev) => (prev + 1) as Step)};
+  const goNext = async () => {
+    if (currentStep === 1 && !userId) {
+      if (!profileValid) return;
+      if (profileSubmitRef.current) {
+        try {await profileSubmitRef.current();} 
+        catch (err) {return;}
+      } 
+      else {return;}
+    }
+    if (currentStep < 5) setCurrentStep((prev) => (prev + 1) as Step)
+  };
+
   const goBack = () => {if (currentStep > 1) setCurrentStep((prev) => (prev - 1) as Step)};
 
   const renderContent = () => {
     switch (currentStep) {
       case 1:
-        return <UserInfoForm onCreated={(u) => { setUserId(u.id); setUserInfo(u); }} />;
+        return (
+          <UserInfoForm
+            onCreated={(u) => {setUserId(u.id); setUserInfo(u)}}
+            onValidityChange={(v) => setProfileValid(v)}
+            onRegisterSubmit={(fn) => (profileSubmitRef.current = fn)}
+          />
+        );
       case 2:
         return <MicTest onPassed={() => setMicTestPassed(true)} />;
       case 3:
@@ -41,6 +60,7 @@ export default function UserPage() {
       userId={userId}
       micTestPassed={micTestPassed}
       keywordRecordingCompleted={keywordRecordingCompleted}
+      profileValid={profileValid}
       onStepChange={setCurrentStep}
       onBack={goBack}
       onNext={goNext}

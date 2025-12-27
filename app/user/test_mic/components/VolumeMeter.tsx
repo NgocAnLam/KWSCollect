@@ -1,13 +1,21 @@
-interface VolumeMeterProps {
-  volume: number;
-}
+import { forwardRef, useImperativeHandle, useRef } from "react";
 
-export default function VolumeMeter({ volume }: VolumeMeterProps) {
+interface VolumeMeterProps {volume?: number;}
+export interface VolumeMeterHandle {setVolume: (volume: number) => void;}
+
+const VolumeMeter = forwardRef<VolumeMeterHandle, VolumeMeterProps>(({ volume = 0 }, ref) => {
+  const barRef = useRef<HTMLDivElement>(null);
   const getColor = () => {
     if (volume > 30) return "bg-green-500";
     if (volume > 10) return "bg-yellow-500";
     return "bg-red-500";
   };
+
+  useImperativeHandle(ref, () => ({
+    setVolume: (vol: number) => {
+      if (barRef.current) barRef.current.style.width = `${Math.min(100, vol)}%`;
+    },
+  }));
 
   return (
     <div className="w-full max-w-md">
@@ -17,10 +25,14 @@ export default function VolumeMeter({ volume }: VolumeMeterProps) {
       </div>
       <div className="h-5 bg-gray-200 rounded-full overflow-hidden shadow-inner">
         <div
-          className={`h-full transition-all duration-100 ${getColor()}`}
+          ref={barRef}
+          className={`h-full transition-all duration-75 ${getColor()} `}
           style={{ width: `${volume}%` }}
         />
       </div>
     </div>
   );
-}
+});
+
+VolumeMeter.displayName = "VolumeMeter";
+export default VolumeMeter;

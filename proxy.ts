@@ -1,11 +1,9 @@
-// middleware.ts
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-export async function middleware(req: any) {
+export async function proxy(req: any) {
   const pathname = req.nextUrl.pathname;
 
-  // Bảo vệ tất cả route bắt đầu bằng /admin
   if (pathname.startsWith("/admin")) {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
@@ -15,7 +13,6 @@ export async function middleware(req: any) {
       return NextResponse.redirect(loginUrl);
     }
   }
-
   return NextResponse.next();
 }
 

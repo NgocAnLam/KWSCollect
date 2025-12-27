@@ -1,4 +1,3 @@
-// app/admin/components/ActionButton.tsx
 import Link from "next/link";
 
 interface ActionButtonProps {

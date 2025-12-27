@@ -1,22 +1,23 @@
-// app/admin/page.tsx
-import WelcomeCard from "./components/WelcomeCard";
 import StatsGrid from "./components/StatsGrid";
-import QuickActions from "./components/QuickActions";
-import { getPendingPaymentCount } from "./lib/fetchStats";
+import { getAdminStats } from "./lib/fetchStats";
 
 export default async function AdminDashboardPage() {
-  const pendingCount = await getPendingPaymentCount();
+  const stats = await getAdminStats();
+
+  const totalUser = stats.user_count;
+  const totalKeywords = stats.keyword_count;
+  const totalSentences = stats.sentence_count;
+  const totalPendingPayment = totalUser - stats.paid_user - stats.rejected_user;
 
   return (
     <div className="space-y-8">
-      {/* Chào mừng */}
-      <WelcomeCard />
-
       {/* Thống kê */}
-      <StatsGrid pendingCount={pendingCount} />
-
-      {/* Thao tác nhanh */}
-      <QuickActions />
+      <StatsGrid
+        totalUser={totalUser}
+        totalKeywords={totalKeywords}
+        totalSentences={totalSentences}
+        totalPendingPayment={totalPendingPayment}
+      />
     </div>
   );
 }

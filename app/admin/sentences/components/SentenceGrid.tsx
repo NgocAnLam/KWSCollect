@@ -1,9 +1,6 @@
-// app/admin/sentences/components/SentenceGrid.tsx
 import SentenceCard from "./SentenceCard";
 
-type Props = {
-  sentences: any[];
-};
+type Props = {sentences: any[]};
 
 export default function SentenceGrid({ sentences }: Props) {
   if (sentences.length === 0) {

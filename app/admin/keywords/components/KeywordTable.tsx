@@ -1,4 +1,3 @@
-// app/admin/keywords/components/KeywordTable.tsx
 import KeywordActions from "./KeywordActions";
 
 type Keyword = {
@@ -23,10 +22,11 @@ export default function KeywordTable({ keywords, updateKeyword, deleteKeyword }:
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-      <div className="overflow-x-auto">
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden h-[70vh] flex flex-col">
+      {/* Header table cố định nếu muốn, nhưng ở đây giữ nguyên kiểu cuộn toàn bộ */}
+      <div className="overflow-x-auto flex-1 overflow-y-auto">
         <table className="w-full">
-          <thead className="bg-gray-100 border-b border-gray-200">
+          <thead className="bg-gray-100 border-b border-gray-200 sticky top-0">
             <tr>
               <th className="text-left px-8 py-4 font-semibold text-gray-700">ID</th>
               <th className="text-left px-8 py-4 font-semibold text-gray-700">Từ khóa</th>

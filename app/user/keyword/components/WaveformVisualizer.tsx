@@ -1,5 +1,3 @@
-// app/user/components/WaveformVisualizer.tsx
-
 interface WaveformVisualizerProps {
   volume: number;
   isRecording: boolean;

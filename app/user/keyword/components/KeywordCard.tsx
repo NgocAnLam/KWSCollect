@@ -1,4 +1,3 @@
-// app/user/components/KeywordCard.tsx
 import { ChevronRight } from "lucide-react";
 import RecordingRow from "./RecordingRow";
 
@@ -9,7 +8,6 @@ interface KeywordCardProps {
   startRecording: (rowIndex: number) => void;
   retry: (rowIndex: number) => void;
 
-  // Thêm các props cần thiết cho nút
   isCurrentDone: boolean;
   isAllDone: boolean;
   currentKeywordIdx: number;

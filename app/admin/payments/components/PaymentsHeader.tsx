@@ -1,4 +1,3 @@
-// app/admin/payments/components/PaymentsHeader.tsx
 export default function PaymentsHeader() {
   return (
     <div className="mb-8">

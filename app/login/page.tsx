@@ -1,4 +1,3 @@
-// app/admin/login/page.tsx
 "use client";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -26,19 +25,15 @@ export default function AdminLoginPage() {
       callbackUrl,
     });
 
-    if (result?.ok) {
-      router.push(callbackUrl);
-    } else {
-      setError("Tên đăng nhập hoặc mật khẩu không đúng");
-    }
-
+    if (result?.ok) router.push(callbackUrl);
+    else setError("Tên đăng nhập hoặc mật khẩu không đúng");
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 flex items-center justify-center p-4">
+    <div className="h-[85vh] bg-gradient-to-br from-indigo-50 to-purple-100 flex items-center justify-center">
       <div className="bg-white rounded-2xl shadow-2xl p-10 w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-4">
           <h1 className="text-3xl font-bold text-gray-800">Admin Portal</h1>
           <p className="text-gray-600 mt-2">Đăng nhập hệ thống quản trị</p>
         </div>

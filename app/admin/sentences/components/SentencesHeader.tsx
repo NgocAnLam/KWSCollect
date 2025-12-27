@@ -1,4 +1,3 @@
-// app/admin/sentences/components/SentencesHeader.tsx
 import CreateSentenceModal from "./CreateSentenceModal";
 
 export default function SentencesHeader() {

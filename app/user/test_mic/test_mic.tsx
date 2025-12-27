@@ -1,8 +1,7 @@
-// app/user/test_mic.tsx
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import MicTestButton from "./components/MicTestButton";
-import VolumeMeter from "./components/VolumeMeter";
+import VolumeMeter, { VolumeMeterHandle } from "./components/VolumeMeter";
 import RecordingPlayback from "./components/RecordingPlayback";
 import MicTestInstructions from "./components/MicTestInstructions";
 
@@ -21,6 +20,7 @@ export default function MicTest({ onPassed }: MicTestProps) {
   const chunksRef = useRef<BlobPart[]>([]);
   const rafRef = useRef<number | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const volumeMeterRef = useRef<VolumeMeterHandle>(null);
 
   const startRecording = async () => {
     try {
@@ -93,12 +93,18 @@ export default function MicTest({ onPassed }: MicTestProps) {
 
   const measureVolume = () => {
     if (!analyserRef.current) return;
+
     const bufferLength = analyserRef.current.frequencyBinCount;
     const data = new Uint8Array(bufferLength);
     analyserRef.current.getByteFrequencyData(data);
     const avg = data.reduce((a, b) => a + b, 0) / bufferLength;
     const normalized = Math.min(100, (avg / 128) * 100);
-    setVolume(normalized);
+    volumeMeterRef.current?.setVolume(normalized);
+    setVolume(prev => {
+      const diff = Math.abs(prev - normalized);
+      if (diff > 2) return normalized;
+      return prev;
+    });
 
     if (normalized > 15) onPassed();
 
@@ -108,10 +114,10 @@ export default function MicTest({ onPassed }: MicTestProps) {
   useEffect(() => {return () => stopRecording()}, []);
 
   return (
-    <div className="flex flex-col items-center space-y-8 py-12">
+    <div className="flex flex-col items-center space-y-8 py-4">
       <MicTestInstructions />
       <MicTestButton isRecording={isRecording} onClick={isRecording ? stopRecording : startRecording} />
-      <VolumeMeter volume={volume} />
+      <VolumeMeter ref={volumeMeterRef} volume={volume} />
       <RecordingPlayback audioUrl={audioUrl} />
     </div>
   );

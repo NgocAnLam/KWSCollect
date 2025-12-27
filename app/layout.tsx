@@ -15,24 +15,27 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'KWS Collection',
   description: 'Collect audio samples',
-}
-
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
-      <body className="bg-slate-50 text-slate-900">
-        <div className="max-w-5xl mx-auto p-4">
-          <header className="flex items-center justify-between mb-6">
-            <h1 className="text-xl font-semibold">KWS Collection</h1>
-            <nav className="space-x-4">
-              <a href="/user" className="text-sm text-slate-600">User</a>
-              <a href="/admin" className="text-sm text-slate-600">Admin</a>
-            </nav>
-          </header>
-          {children}
-        </div>
+      <body className="bg-slate-50 text-slate-900 h-screen flex flex-col overflow-hidden">
+        <header className="w-full h-[10vh] flex items-center justify-between px-6 bg-white border-b border-slate-200 shrink-0">
+          <h1 className="text-xl font-semibold">KWS Collection</h1>
+          <nav className="space-x-6">
+            <a href="/user" className="text-sm text-slate-600 hover:text-slate-900">User</a>
+            <a href="/admin" className="text-sm text-slate-600 hover:text-slate-900">Admin</a>
+            <a href="/info" className="text-sm text-slate-600 hover:text-slate-900">Info</a>
+          </nav>
+        </header>
+
+        <main className="flex-1 w-full min-h-0 bg-slate-50 overflow-auto">
+          <div className="h-[80vh] w-full px-6 py-8">
+            {children}
+          </div>
+        </main>
       </body>
     </html>
-  )
+  );
 }

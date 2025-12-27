@@ -1,4 +1,3 @@
-// app/admin/components/StatCard.tsx
 interface StatCardProps {
   title: string;
   value: string;
@@ -17,7 +16,11 @@ export default function StatCard({ title, value, highlight }: StatCardProps) {
       <p className={`text-sm font-medium ${highlight ? "opacity-90" : "text-gray-600"}`}>
         {title}
       </p>
-      <p className="text-4xl font-bold mt-3">{value}</p>
+      
+      <p className="text-4xl font-bold mt-3">
+        {value}
+      </p>
+
     </div>
   );
 }

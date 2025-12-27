@@ -15,7 +15,7 @@ export default function MicTestButton({ isRecording, onClick }: MicTestButtonPro
           : "bg-blue-600 hover:bg-blue-700"
       }`}
     >
-      {isRecording ? <Mic size={64} /> : <MicOff size={64} />}
+      {isRecording ? <Mic size={32} /> : <MicOff size={32} />}
     </button>
   );
 }
