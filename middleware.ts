@@ -14,6 +14,7 @@ export async function middleware(req: NextRequest) {
     // DEBUG rất nên có khi deploy
     console.log("TOKEN:", token);
     console.log("COOKIES:", req.cookies.getAll());
+    console.log("SECRET:", process.env.NEXTAUTH_SECRET);
 
 
     if (!token || token.role !== "admin") {
