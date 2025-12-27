@@ -22,8 +22,7 @@ export default function LoginClient() {
     const result = await signIn("credentials", {
       username,
       password,
-      redirect: false,
-      callbackUrl,
+      callbackUrl: "/admin",
     });
 
     if (result?.ok) router.push(callbackUrl);
