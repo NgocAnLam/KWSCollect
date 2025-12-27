@@ -13,6 +13,8 @@ export async function middleware(req: NextRequest) {
 
     // DEBUG rất nên có khi deploy
     console.log("TOKEN:", token);
+    console.log("COOKIES:", req.cookies.getAll());
+
 
     if (!token || token.role !== "admin") {
       const loginUrl = new URL("/login", req.url);
