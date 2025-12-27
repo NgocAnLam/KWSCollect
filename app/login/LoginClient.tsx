@@ -1,5 +1,4 @@
 "use client";
-
 import { useSearchParams, useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
@@ -22,7 +21,7 @@ export default function LoginClient() {
     const result = await signIn("credentials", {
       username,
       password,
-      callbackUrl: "/admin",
+      redirect: false,
     });
 
     if (result?.ok) router.push(callbackUrl);
