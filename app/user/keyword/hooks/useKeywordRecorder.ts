@@ -41,7 +41,10 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
   useEffect(() => {
     const fetchKeywords = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/user/keyword`);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/user/keyword`,
+          {headers: {"ngrok-skip-browser-warning": "true"}}
+        );
         if (!res.ok) throw new Error(`Không thể tải danh sách từ khóa (HTTP ${res.status})`);
         const response: KeywordListResponse = await res.json();
         setKeywords(response.keywords);
