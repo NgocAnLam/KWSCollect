@@ -36,7 +36,10 @@ export default function SentenceRecorder({ userId }: { userId: number | null }) 
     if (!userId) return;
     const fetchSentences = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/user/sentence/assign/${userId}`);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/user/sentence/assign/${userId}`,
+          {headers: {"ngrok-skip-browser-warning": "true"}}
+        );
         if (!response.ok) throw new Error(`Lỗi ${response.status}: Không thể tải danh sách câu`);
         const data = await response.json();
         const sentences: Sentence[] = data.sentences || [];
