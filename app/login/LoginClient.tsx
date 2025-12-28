@@ -24,7 +24,8 @@ export default function LoginClient() {
       redirect: false,
     });
 
-    if (result?.ok) router.push(callbackUrl);
+    // if (result?.ok) router.push(callbackUrl);
+    if (result?.ok) window.location.href = callbackUrl; 
     else setError("Tên đăng nhập hoặc mật khẩu không đúng");
 
     setLoading(false);
