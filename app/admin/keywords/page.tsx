@@ -8,9 +8,12 @@ async function getKeywords() {
   const session = await getServerSession(authOptions);
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/keyword`, {
-    headers: { Authorization: `Bearer ${session?.accessToken}` },
-    cache: "no-store",
-  });
+  cache: "no-store",
+  headers: {
+    Authorization: `Bearer ${session?.accessToken}`,
+    "ngrok-skip-browser-warning": "true",
+  },
+});
 
   if (!res.ok) throw new Error("Không lấy được danh sách từ khóa");
   return res.json();

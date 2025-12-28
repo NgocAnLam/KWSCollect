@@ -10,8 +10,11 @@ async function getPayments() {
   if (!session?.accessToken) throw new Error("Không có quyền truy cập");
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/payment`, {
-      cache: "no-store",
-      headers: { Authorization: `Bearer ${session.accessToken}` },
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${session.accessToken}`,
+      "ngrok-skip-browser-warning": "true",
+    },
   });
 
   if (!res.ok) throw new Error("Không tải được danh sách thanh toán");

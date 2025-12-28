@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
-      <body className="bg-slate-50 text-slate-900 h-screen flex flex-col overflow-hidden">
+      <body className={`bg-slate-50 text-slate-900 h-screen flex flex-col overflow-hidden ${geistSans.variable} ${geistMono.variable}`}>
         <header className="w-full h-[10vh] flex items-center justify-between px-6 bg-white border-b border-slate-200 shrink-0">
           <h1 className="text-xl font-semibold">KWS Collection</h1>
           <nav className="space-x-6">

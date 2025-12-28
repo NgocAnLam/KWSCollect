@@ -21,10 +21,14 @@ export default function CreateSentenceModal() {
           setIsOpen(false);
           return;
         }
-
+        
         const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/sentence/keywords`, {
-          headers: {Authorization: `Bearer ${session.accessToken}`},
+          headers: {
+            Authorization: `Bearer ${session.accessToken}`,
+            "ngrok-skip-browser-warning": "true",
+          },
         });
+
         if (!res.ok) throw new Error();
         const data = await res.json();
         setKeywords(data);
