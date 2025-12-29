@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 
 type RecordStatus = "idle" | "recording" | "processing" | "accepted" | "rejected";
-const REPEATS = 5;
+const REPEATS = 2;
 
 interface RecordItem {
   audioUrl: string | null;
