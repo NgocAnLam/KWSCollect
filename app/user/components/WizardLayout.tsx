@@ -168,12 +168,12 @@ export default function WizardLayout({
         </div>
 
         {/* Footer buttons - fixed dưới cùng trên mobile nếu cần, nhưng ở đây giữ linh hoạt */}
-        <div className="border-t bg-gray p-0">
-          <div className="max-w-5xl mx-auto w-full flex flex-col sm:flex-row justify-between items-center gap-4 p-4">
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t md:static md:border-t">
+          <div className="max-w-5xl mx-auto w-full flex flex-row justify-between items-center gap-3 p-4">
             <button
               onClick={onBack}
               disabled={currentStep === 1}
-              className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all w-full sm:w-auto ${
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
                 currentStep === 1
                   ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -183,11 +183,12 @@ export default function WizardLayout({
               Quay lại
             </button>
 
+
             {currentStep < 5 ? (
               <button
                 onClick={onNext}
                 disabled={!canGoNext}
-                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all w-full sm:w-auto order-first sm:order-last ${
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
                   !canGoNext
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-blue-600 text-white hover:bg-blue-700"
@@ -196,6 +197,7 @@ export default function WizardLayout({
                 Tiếp theo
                 <ChevronRight size={20} />
               </button>
+
             ) : (
               <button className="flex items-center justify-center gap-2 px-8 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-all w-full sm:w-auto">
                 <CheckCircle2 size={20} />
