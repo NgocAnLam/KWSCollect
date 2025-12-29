@@ -121,7 +121,7 @@ export default function UserInfoForm({ onCreated, onValidityChange, onRegisterSu
         </div>
 
         {/* Nội dung cuộn được - chia thành 2 cột trên md+ */}
-        <div className="p-1 sm:p-2 overflow-y-auto flex-1 text-sm">
+        <div className="p-1 sm:p-2 overflow-y-auto flex-1 text-sm hide-scrollbar">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {/* Left column: personal info */}
             <div className="space-y-2">

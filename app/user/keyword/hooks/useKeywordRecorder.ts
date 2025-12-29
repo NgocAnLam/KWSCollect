@@ -125,12 +125,21 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
         fd.append("file", blob, `kw_${currentKeywordIdx}_${rowIndex}.webm`);
 
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/user/keyword/upload`, {
+          const res = await fetch("/api/user/keyword/upload", {
             method: "POST",
             body: fd,
           });
 
-          if (!res.ok) throw new Error("Upload thất bại");
+          if (!res.ok) {
+            let errorMessage = "Upload thất bại";
+            try {
+              const errorData = await res.json();
+              errorMessage = errorData.error || errorMessage;
+            } catch (e) {
+              errorMessage = `Upload thất bại (HTTP ${res.status})`;
+            }
+            throw new Error(errorMessage);
+          }
 
           const data = await res.json();
           const accepted = data.accepted === true;
@@ -214,6 +223,37 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
 
   useEffect(() => {return () => cleanup()}, []);
 
+  // Tự động chuyển sang keyword tiếp theo khi hoàn thành keyword hiện tại (nếu có nhiều keyword)
+  useEffect(() => {
+    if (isCurrentDone && keywords.length > 1 && currentKeywordIdx < keywords.length - 1) {
+      // Tự động chuyển sang keyword tiếp theo
+      setCurrentKeywordIdx((prev) => prev + 1);
+      setRecords(
+        Array(REPEATS).fill(null).map(() => ({
+          audioUrl: null,
+          blob: null,
+          status: "idle",
+        }))
+      );
+      setVolumes(Array(REPEATS).fill(0));
+    }
+  }, [isCurrentDone, keywords.length, currentKeywordIdx]);
+
+  // Tự động gọi onComplete khi tất cả keyword đã hoàn tất
+  // isAllDone chỉ true khi totalCompleted === totalRecordings (tất cả keyword đã hoàn thành)
+  // Chỉ gọi khi có keywords và tất cả đã hoàn thành
+  const onCompleteCalledRef = useRef(false);
+  useEffect(() => {
+    if (isAllDone && onComplete && keywords.length > 0 && !onCompleteCalledRef.current) {
+      onCompleteCalledRef.current = true;
+      onComplete();
+    }
+    // Reset khi keywords thay đổi (khi fetch lại)
+    if (keywords.length === 0) {
+      onCompleteCalledRef.current = false;
+    }
+  }, [isAllDone, onComplete, keywords.length]);
+
   return {
     keywords,
     currentKeywordIdx,
@@ -231,6 +271,5 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
     startRecording,
     retry,
     nextKeyword,
-    onComplete: isAllDone ? onComplete : undefined,
   };
 }

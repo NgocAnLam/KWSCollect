@@ -63,9 +63,53 @@ export default function WizardLayout({
 
   return (
     <div className="h-[80vh] w-full flex flex-col md:flex-row overflow-hidden bg-gray-50">
-      {/* Sidebar - Mobile: trên top, Desktop: fixed trái full height */}
-      <aside className="w-full md:w-80 bg-white shadow-lg flex flex-col h-auto md:h-full overflow-y-auto">
-        <nav className="space-y-3 flex-1 px-6 py-6">
+      {/* Sidebar - Mobile: ngang, Desktop: dọc */}
+      <aside className="w-full md:w-80 bg-white shadow-lg flex flex-col shrink-0 md:h-full">
+        {/* Mobile: Horizontal Navigation with Details */}
+        <div className="flex md:hidden flex-col">
+          <nav className="flex items-center space-x-2 px-3 py-3 overflow-x-auto hide-scrollbar">
+            {steps.map((step) => {
+              const completed = isStepCompleted(step.id);
+              const active = currentStep === step.id;
+
+              return (
+                <div
+                  key={step.id}
+                  className={`flex flex-col items-center justify-center min-w-[60px] p-2 rounded-lg transition-all cursor-pointer ${
+                    active
+                      ? "bg-blue-50 border-2 border-blue-500"
+                      : completed
+                      ? "bg-green-50 border-2 border-green-500"
+                      : "bg-gray-50 border-2 border-transparent hover:bg-gray-100"
+                  }`}
+                  onClick={() => {
+                    if (step.id === 1 || (step.id <= currentStep && (step.id === 2 ? micTestPassed : true))) {
+                      onStepChange(step.id);
+                    }
+                  }}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-white flex-shrink-0 text-xs ${
+                      completed ? "bg-green-500" : active ? "bg-blue-500" : "bg-gray-400"
+                    }`}
+                  >
+                    {completed ? <CheckCircle2 size={14} /> : step.id}
+                  </div>
+                </div>
+              );
+            })}
+          </nav>
+          
+          {/* Mobile: Step Details */}
+          <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+            <h3 className="text-sm font-semibold text-gray-800">
+              {currentStepInfo.title}
+            </h3>
+          </div>
+        </div>
+
+        {/* Desktop: Vertical Navigation */}
+        <nav className="hidden md:flex flex-col space-y-3 flex-1 px-6 py-6">
           {steps.map((step) => {
             const completed = isStepCompleted(step.id);
             const active = currentStep === step.id;
@@ -94,7 +138,7 @@ export default function WizardLayout({
                   {completed ? <CheckCircle2 size={20} /> : step.id}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className={`font-medium truncate ${active ? "text-blue-700" : "text-gray-800"}`}>
+                  <h3 className={`text-base font-medium truncate ${active ? "text-blue-700" : "text-gray-800"}`}>
                     {step.title}
                   </h3>
                   <p className="text-sm text-gray-500 truncate">{step.description}</p>
@@ -115,25 +159,16 @@ export default function WizardLayout({
       </aside>
 
       {/* Main Content - chiếm hết phần còn lại, full height, scroll nội dung */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-0">
-          <div className="max-w-5xl mx-auto w-full">
-            <div className="mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+      <main className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <div className="flex-1 overflow-y-auto p-0 hide-scrollbar min-h-0">
+          <div className="max-w-5xl mx-auto w-full px-4 md:px-6 py-4 md:py-6">
+            <div className="mb-4 md:mb-8">
+              <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 mb-2">
                 Bước {currentStep}: {currentStepInfo.title}
               </h2>
             </div>
 
-            {currentStep === 3 && !keywordRecordingCompleted && (
-              <div className="mb-8 p-5 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
-                <p className="text-amber-800 font-medium">
-                  ⚠️ Bạn phải hoàn thành <strong>tất cả 50 bản ghi</strong> (10 từ khóa × 5 lần) 
-                  và mọi bản ghi đều được <strong>chấp nhận</strong> thì mới có thể sang bước tiếp theo.
-                </p>
-              </div>
-            )}
-
-            <div className="bg-white rounded-xl shadow-sm h-auto max-h-[90vh] p-0 overflow-auto">
+            <div className="bg-white rounded-xl shadow-sm h-auto max-h-none md:max-h-[90vh] p-0 overflow-auto hide-scrollbar">
               {children}
             </div>
           </div>

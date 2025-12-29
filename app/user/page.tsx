@@ -27,10 +27,24 @@ export default function UserPage() {
       } 
       else {return;}
     }
-    if (currentStep < 5) setCurrentStep((prev) => (prev + 1) as Step)
+    if (currentStep < 5) {
+      // Reset keywordRecordingCompleted khi chuyển vào step 3
+      if (currentStep === 2) {
+        setKeywordRecordingCompleted(false);
+      }
+      setCurrentStep((prev) => (prev + 1) as Step);
+    }
   };
 
-  const goBack = () => {if (currentStep > 1) setCurrentStep((prev) => (prev - 1) as Step)};
+  const goBack = () => {
+    if (currentStep > 1) {
+      // Reset keywordRecordingCompleted khi quay lại từ step 4
+      if (currentStep === 4) {
+        setKeywordRecordingCompleted(false);
+      }
+      setCurrentStep((prev) => (prev - 1) as Step);
+    }
+  };
 
   const renderContent = () => {
     switch (currentStep) {
