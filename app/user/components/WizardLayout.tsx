@@ -204,16 +204,6 @@ export default function WizardLayout({
                 Nộp và Hoàn tất
               </button>
             )}
-
-            {/* User info mobile */}
-            {userInfo && (
-              <div className="md:hidden w-full sm:w-auto text-left sm:text-center">
-                <p className="text-sm font-medium text-gray-700">
-                  {userInfo.name || userInfo.fullName} (ID: {userId})
-                </p>
-                {userInfo.age && <p className="text-sm text-gray-600">Tuổi: {userInfo.age}</p>}
-              </div>
-            )}
           </div>
         </div>
       </main>
