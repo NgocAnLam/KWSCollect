@@ -77,7 +77,7 @@ export default function LoginClient() {
             disabled={loading}
             className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-lg rounded-xl disabled:opacity-70"
           >
-            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+            {loading ? "Đang đăng nhập…" : "Đăng nhập"}
           </button>
         </form>
 

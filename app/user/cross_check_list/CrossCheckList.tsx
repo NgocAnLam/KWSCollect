@@ -1,57 +1,153 @@
-import React, { useEffect, useState, useRef } from 'react'
-import axios from 'axios'
-import WaveSurfer from 'wavesurfer.js'
-import Slider from 'rc-slider'
+"use client";
 
-export default function CrossCheckList({ userId }: { userId: number | null }) {
-const [items, setItems] = useState<any[]>([])
-useEffect(()=>{ if(userId) fetchToCheck() }, [userId])
+import { useEffect, useState, useMemo } from "react";
+import { Loader2 } from "lucide-react";
+import axios from "axios";
+import CrossCheckProgress from "./components/CrossCheckProgress";
+import CrossCheckTabs from "./components/CrossCheckTabs";
+import CrossCheckCard from "./components/CrossCheckCard";
+import CrossCheckCompletion from "./components/CrossCheckCompletion";
+import { getApiBase } from "@/lib/api";
+import { upsertProgress } from "../lib/sessionApi";
 
-async function fetchToCheck(){
-    const resp = await axios.get(`/sentence/to-check/${userId}`)
-    setItems(resp.data.sentences || [])
-}
+type CrossCheckItem = {
+  id: number;
+  recording_id: number;
+  text: string;
+  keyword: string;
+  minio_path: string;
+  audio_url: string | null;
+  recorder_start: number;
+  recorder_end: number;
+  annotation_count: number;
+};
 
-return (
-    <div className="grid gap-4">
-        {items.map((s, idx)=> (<CrossCheckItem key={s.id} sentence={s} userId={userId} />))}
-    </div>
-)}
+export default function CrossCheckList({
+  userId,
+  sessionId,
+  onComplete,
+}: {
+  userId: number | null;
+  sessionId?: number | null;
+  onComplete?: () => void;
+}) {
+  const [items, setItems] = useState<CrossCheckItem[]>([]);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [submittedCount, setSubmittedCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [range, setRange] = useState<[number, number]>([0, 30]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
+  const currentItem = useMemo(() => items[currentIdx], [items, currentIdx]);
+  const total = items.length;
+  const progressPercent = total > 0 ? Math.round((submittedCount / total) * 100) : 0;
+  const allCrossCheckDone = !loading && (total === 0 || submittedCount === total);
 
-function CrossCheckItem({ sentence, userId }: any) {
-    const containerRef = useRef<HTMLDivElement | null>(null)
-    const waveRef = useRef<any>(null)
-    const [range, setRange] = useState<[number, number]>([0,1])
-    const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  useEffect(() => {
+    if (allCrossCheckDone && onComplete) onComplete();
+  }, [allCrossCheckDone, onComplete]);
 
-    useEffect(()=>{
-        // fetch a short sample audio for sentence (from backend)
-        const url = `/storage/sent_sample_${sentence.id}.webm`
-        setAudioUrl(url)
-        if(containerRef.current){
-            if(waveRef.current) waveRef.current.destroy()
-                waveRef.current = WaveSurfer.create({ container: containerRef.current, waveColor: '#f97316', progressColor: '#fb923c' })
-                waveRef.current.load(url)
-                waveRef.current.on('ready', ()=> setRange([0, waveRef.current.getDuration()]))
-        }
-    }, [])
+  useEffect(() => {
+    if (!userId) return;
+    setLoading(true);
+    setError(null);
+    axios
+      .get(`${getApiBase()}/user/sentence/to-check/${userId}`)
+      .then((resp) => setItems(resp.data?.sentences || []))
+      .catch((e: unknown) =>
+        setError(e && typeof e === "object" && "message" in e ? String((e as { message: string }).message) : "Không tải được danh sách kiểm tra")
+      )
+      .finally(() => setLoading(false));
+  }, [userId]);
 
-    const submit = async ()=>{
-        await axios.post('/cross/add', { sentence_id: sentence.id, user_id: userId, start: range[0], end: range[1] })
-        alert('Cảm ơn, đã gửi kiểm tra')
+  useEffect(() => {
+    setRange([0, 30]);
+    setIsPlaying(false);
+  }, [currentItem?.recording_id]);
+
+  const handleSubmit = async () => {
+    if (!currentItem || !userId) return;
+    if (range[0] >= range[1]) {
+      alert("Vui lòng chọn đoạn bắt đầu nhỏ hơn đoạn kết thúc.");
+      return;
     }
+    setSubmitting(true);
+    try {
+      await axios.post(`${getApiBase()}/user/cross/add`, {
+        sentence_id: currentItem.id,
+        user_id: userId,
+        recording_id: currentItem.recording_id,
+        start: range[0],
+        end: range[1],
+      });
+      const newSubmitted = submittedCount + 1;
+      setSubmittedCount(newSubmitted);
+      if (userId && sessionId != null) {
+        const pct = total > 0 ? Math.round((newSubmitted / total) * 100) : 0;
+        upsertProgress(userId, sessionId, "cross_check", pct).catch(() => {});
+      }
+      setCurrentIdx((i) => Math.min(i + 1, total - 1));
+    } catch (e: unknown) {
+      const msg =
+        e && typeof e === "object" && e !== null && "response" in e
+          ? (e as { response?: { data?: { detail?: string } } }).response?.data?.detail
+          : undefined;
+      alert(msg || "Gửi thất bại");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
+  const goNext = () => setCurrentIdx((i) => Math.min(i + 1, total - 1));
+  const goPrev = () => setCurrentIdx((i) => Math.max(i - 1, 0));
+
+  if (!userId) return null;
+
+  if (loading) {
     return (
-        <div className="p-3 bg-white rounded shadow-sm">
-        <div className="font-medium mb-1">{sentence.text}</div>
-        <div ref={containerRef} className="h-20 mb-2 bg-slate-50" />
-        <Slider range min={0} max={range[1] || 30} value={range} onChange={(v:any)=>setRange(v)} />
-            <div className="flex justify-between mt-2">
-            <div>Start: {range[0].toFixed(2)}s</div>
-            <div>End: {range[1].toFixed(2)}s</div>
-                <button onClick={submit} className="bg-indigo-600 text-white px-3 py-1 rounded">Gửi</button>
-            </div>
-        </div>
-    )
+      <div className="flex flex-col items-center justify-center py-12 md:py-20 px-4">
+        <Loader2 className="w-10 h-10 md:w-12 md:h-12 animate-spin text-indigo-600" />
+        <p className="mt-4 text-base md:text-lg text-gray-700">Đang tải danh sách kiểm tra chéo…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12 md:py-20 px-4">
+        <p className="text-lg md:text-xl font-bold text-red-600">Lỗi: {error}</p>
+        <p className="mt-2 text-sm md:text-base text-gray-600">Vui lòng thử lại sau.</p>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return <CrossCheckCompletion />;
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-4 w-full space-y-4">
+      <CrossCheckProgress
+        currentIndex={currentIdx}
+        total={total}
+        progressPercent={progressPercent}
+      />
+      <CrossCheckTabs total={total} currentIdx={currentIdx} />
+      <CrossCheckCard
+        item={currentItem}
+        range={range}
+        setRange={setRange}
+        isPlaying={isPlaying}
+        onPlayToggle={() => setIsPlaying((p) => !p)}
+        onPrev={goPrev}
+        onNext={goNext}
+        onSubmit={handleSubmit}
+        canGoPrev={currentIdx > 0}
+        canGoNext={currentIdx < total - 1}
+        submitting={submitting}
+      />
+    </div>
+  );
 }

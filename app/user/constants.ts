@@ -1,0 +1,33 @@
+/** Bước wizard thu thập (1–5). */
+export type Step = 1 | 2 | 3 | 4 | 5;
+
+export const STORAGE_USER_ID = "collect_user_id";
+export const STORAGE_SESSION_ID = "collect_session_id";
+
+export const STEPS_PROGRESS: Record<Step, string> = {
+  1: "profile",
+  2: "mic_test",
+  3: "keyword",
+  4: "sentence",
+  5: "cross_check",
+};
+
+export const STEP_TITLES: Record<Step, string> = {
+  1: "Thông tin cá nhân",
+  2: "Kiểm tra Micro",
+  3: "Thu thập keyword",
+  4: "Thu thập câu dài",
+  5: "Kiểm tra chéo",
+};
+
+/** Xác định bước cần resume từ danh sách progress (bước đầu tiên chưa đạt 100%). */
+export function computeResumeStep(
+  steps: { step: string; progress: number }[]
+): Step {
+  for (let n = 1; n <= 5; n++) {
+    const stepName = STEPS_PROGRESS[n as Step];
+    const found = steps.find((s) => s.step === stepName);
+    if (!found || found.progress < 100) return n as Step;
+  }
+  return 5;
+}

@@ -8,25 +8,11 @@ export default function PaymentMethodSelector({
   setPaymentMethod: (v: 'momo' | 'bank' | 'cash' | 'none') => void;
 }) {
   const getButtonClass = (id: typeof paymentMethod) => {
-    const base = "py-2 rounded-lg text-sm font-medium transition-all";
-    const inactive = "bg-gray-100 text-gray-700 hover:bg-gray-200";
-
+    const base = "py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors";
     if (paymentMethod === id) {
-      switch (id) {
-        case 'momo':
-          return `${base} bg-pink-600 text-white shadow-md ring-2 ring-pink-100`;
-        case 'bank':
-          return `${base} bg-blue-600 text-white shadow-md ring-2 ring-blue-100`;
-        case 'cash':
-          return `${base} bg-green-600 text-white shadow-md ring-2 ring-green-100`;
-        case 'none':
-          return `${base} bg-gray-600 text-white shadow-md ring-2 ring-gray-100`;
-        default:
-          return inactive;
-      }
+      return `${base} bg-indigo-600 text-white border-2 border-indigo-500 shadow-sm`;
     }
-
-    return `${base} ${inactive}`;
+    return `${base} bg-gray-100 text-gray-600 border border-transparent hover:bg-gray-200`;
   };
 
   const methods = [
@@ -38,14 +24,15 @@ export default function PaymentMethodSelector({
 
   return (
     <div>
-      <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-        <DollarSign className="h-4 w-4" />
-        Chọn cách nhận tiền
+      <p className="text-xs font-medium text-indigo-600 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+        <DollarSign className="h-3.5 w-3.5" />
+        Cách nhận thù lao
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {methods.map((item) => (
           <button
             key={item.id}
+            type="button"
             onClick={() => setPaymentMethod(item.id)}
             className={getButtonClass(item.id)}
           >

@@ -1,4 +1,4 @@
-import { Mic, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Mic, Loader2, CheckCircle, XCircle, Lock } from "lucide-react";
 import WaveformVisualizer from "./WaveformVisualizer";
 
 type RecordStatus = "idle" | "recording" | "processing" | "accepted" | "rejected";
@@ -8,6 +8,7 @@ interface RecordingRowProps {
   status: RecordStatus;
   volume: number;
   audioUrl: string | null;
+  rejectReason?: string;
   onStartRecording: () => void;
   onRetry: () => void;
   previousRecordStatus?: RecordStatus;
@@ -18,131 +19,112 @@ export default function RecordingRow({
   status,
   volume,
   audioUrl,
+  rejectReason,
   onStartRecording,
   onRetry,
   previousRecordStatus,
 }: RecordingRowProps) {
-  // Kiểm tra xem có thể ghi âm không: lần đầu tiên (index === 0) hoặc lần trước đã được chấp nhận
   const canRecord = index === 0 || previousRecordStatus === "accepted";
 
   return (
-    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-6 p-4 md:p-5 bg-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition">
-      {/* Mobile: Lần thứ + Nút ghi âm cùng hàng */}
-      <div className="flex md:hidden items-center justify-between gap-3">
-        <div className="text-base font-semibold text-gray-700 flex-shrink-0">
+    <div
+      className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-3 rounded-lg border transition-colors ${
+        status === "recording"
+          ? "bg-red-50 border-red-200"
+          : status === "accepted"
+          ? "bg-emerald-50/50 border-emerald-200"
+          : status === "rejected"
+          ? "bg-red-50/50 border-red-100"
+          : "bg-gray-50/80 border-gray-200"
+      }`}
+    >
+      {/* Cột 1: Lần thứ */}
+      <div className="flex sm:flex-col items-center sm:items-start gap-2 sm:gap-0 sm:w-16 flex-shrink-0">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
           Lần {index + 1}
-        </div>
-        <div className="flex-1 text-center">
-          {status === "idle" && (
-            <>
-              {canRecord ? (
-                <button
-                  onClick={onStartRecording}
-                  className="flex items-center justify-center gap-2 mx-auto px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium text-sm"
-                >
-                  <Mic className="w-4 h-4" />
-                  Ghi âm
-                </button>
-              ) : (
-                <div className="text-gray-400 text-xs font-medium">
-                  Hoàn thành lần trước
-                </div>
-              )}
-            </>
-          )}
-          {status === "recording" && (
-            <div className="flex items-center justify-center gap-2 text-red-600 font-bold text-sm">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Đang ghi...
-            </div>
-          )}
-          {status === "processing" && (
-            <div className="text-orange-600 font-medium flex items-center justify-center gap-2 text-sm">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Kiểm tra...
-            </div>
-          )}
-          {status === "accepted" && (
-            <div className="text-green-600 font-bold flex items-center justify-center gap-2 text-sm">
-              <CheckCircle className="w-6 h-6" />
-              Chấp nhận
-            </div>
-          )}
-          {status === "rejected" && (
-            <div className="text-red-600 font-bold flex items-center justify-center gap-2 text-sm">
-              <XCircle className="w-6 h-6" />
-              Không hợp lệ
-            </div>
-          )}
-        </div>
+        </span>
+        {!canRecord && (
+          <span className="flex items-center gap-1 text-xs text-amber-600 sm:mt-1">
+            <Lock className="h-3 w-3" />
+            Xong Lần 1 trước
+          </span>
+        )}
       </div>
 
-      {/* Desktop: Header: Lần thứ + Waveform */}
-      <div className="hidden md:flex items-center gap-4">
-        <div className="w-20 text-lg font-semibold text-gray-700 flex-shrink-0">
-          Lần {index + 1}
-        </div>
-        <div className="flex-1 min-w-0">
-          <WaveformVisualizer volume={volume} isRecording={status === "recording"} />
-        </div>
+      {/* Cột 2: Waveform hoặc trạng thái */}
+      <div className="flex-1 min-w-0 flex items-center">
+        {status === "recording" && (
+          <div className="w-full h-12 rounded-md overflow-hidden bg-gray-800/90">
+            <WaveformVisualizer volume={volume} isRecording={true} />
+          </div>
+        )}
+        {status === "idle" && canRecord && (
+          <div className="w-full h-12 rounded-md overflow-hidden bg-gray-800/90">
+            <WaveformVisualizer volume={volume} isRecording={false} />
+          </div>
+        )}
+        {status === "idle" && !canRecord && (
+          <p className="text-sm text-gray-400 italic">Hoàn thành Lần 1 trước</p>
+        )}
+        {status === "processing" && (
+          <div className="flex items-center gap-2 text-amber-700 text-sm font-medium py-2">
+            <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
+            <span>Đang kiểm tra…</span>
+          </div>
+        )}
+        {status === "accepted" && (
+          <div className="flex items-center gap-2 text-emerald-700 text-sm font-semibold py-2">
+            <CheckCircle className="h-5 w-5 flex-shrink-0" />
+            <span>Đạt yêu cầu</span>
+          </div>
+        )}
+        {status === "rejected" && (
+          <div className="flex flex-col gap-0.5 py-2">
+            <div className="flex items-center gap-2 text-red-700 text-sm font-semibold">
+              <XCircle className="h-5 w-5 flex-shrink-0" />
+              <span>Chưa đạt</span>
+            </div>
+            {rejectReason && (
+              <p className="text-xs text-red-600 mt-0.5 pl-7 leading-tight">{rejectReason}</p>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Desktop: Trạng thái & Nút ghi âm */}
-      <div className="hidden md:block w-48 text-center flex-shrink-0">
+      {/* Cột 3: Hành động + audio */}
+      <div className="flex flex-row sm:flex-col items-center gap-2 sm:w-36 flex-shrink-0">
         {status === "idle" && (
           <>
             {canRecord ? (
               <button
+                type="button"
                 onClick={onStartRecording}
-                className="flex items-center justify-center gap-2 mx-auto px-4 md:px-6 py-2.5 md:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium text-sm md:text-base w-full md:w-auto"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 transition shadow-sm w-full sm:w-auto"
               >
-                <Mic className="w-4 h-4 md:w-5 md:h-5" />
+                <Mic className="h-4 w-4" />
                 Ghi âm
               </button>
             ) : (
-              <div className="text-gray-400 text-xs md:text-sm font-medium">
-                Hoàn thành lần trước
-              </div>
+              <span className="text-xs text-gray-400 text-center py-2">Chờ Lần 1</span>
             )}
           </>
         )}
         {status === "recording" && (
-          <div className="flex items-center justify-center gap-2 text-red-600 font-bold text-sm md:text-base">
-            <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin" />
-            Đang ghi...
+          <div className="flex items-center gap-1.5 text-red-600 text-sm font-semibold py-2">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            Đang ghi…
           </div>
         )}
-        {status === "processing" && (
-          <div className="text-orange-600 font-medium flex items-center justify-center gap-2 text-sm md:text-base">
-            <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin" />
-            Kiểm tra...
-          </div>
-        )}
-        {status === "accepted" && (
-          <div className="text-green-600 font-bold flex items-center justify-center gap-2 text-sm md:text-base">
-            <CheckCircle className="w-6 h-6 md:w-7 md:h-7" />
-            Chấp nhận
-          </div>
-        )}
-        {status === "rejected" && (
-          <div className="text-red-600 font-bold flex items-center justify-center gap-2 text-sm md:text-base">
-            <XCircle className="w-6 h-6 md:w-7 md:h-7" />
-            Không hợp lệ
-          </div>
-        )}
-      </div>
-
-      {/* Nghe lại + Ghi lại */}
-      <div className="w-full md:w-64 flex-shrink-0">
         {audioUrl && (
-          <div className="flex flex-col items-center gap-2 md:gap-3">
-            <audio controls src={audioUrl} className="w-full h-8 md:h-10" />
+          <div className="flex flex-col items-center gap-1.5 w-full">
+            <audio controls src={audioUrl} className="w-full h-8 rounded-md" />
             {status === "rejected" && (
               <button
+                type="button"
                 onClick={onRetry}
-                className="px-4 md:px-6 py-2 md:py-2.5 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 transition shadow text-sm md:text-base w-full md:w-auto"
+                className="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-amber-500 text-white rounded-md text-xs font-medium hover:bg-amber-600 transition w-full"
               >
-                Ghi lại lần này
+                Ghi lại
               </button>
             )}
           </div>

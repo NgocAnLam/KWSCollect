@@ -130,7 +130,7 @@ export default function CreateSentenceModal() {
                 {fetchError ? (
                   <p className="text-red-600 mb-3">Không tải được danh sách từ khóa</p>
                 ) : keywords.length === 0 ? (
-                  <p className="text-gray-500 mb-3">Đang tải danh sách từ khóa...</p>
+                  <p className="text-gray-500 mb-3">Đang tải danh sách từ khóa…</p>
                 ) : (
                   <select
                     name="keyword"
@@ -164,7 +164,7 @@ export default function CreateSentenceModal() {
                   disabled={loading || fetchError || keywords.length === 0}
                   className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl hover:from-indigo-700 hover:to-purple-700 transition disabled:opacity-70 text-lg flex items-center gap-3"
                 >
-                  {loading ? "Đang tạo..." : "Tạo câu mới"}
+                  {loading ? "Đang tạo…" : "Tạo câu mới"}
                 </button>
               </div>
             </form>

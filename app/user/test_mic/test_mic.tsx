@@ -1,9 +1,8 @@
 "use client";
+
 import { useEffect, useRef, useState } from "react";
-import MicTestButton from "./components/MicTestButton";
+import MicTestCard from "./components/MicTestCard";
 import VolumeMeter, { VolumeMeterHandle } from "./components/VolumeMeter";
-import RecordingPlayback from "./components/RecordingPlayback";
-import MicTestInstructions from "./components/MicTestInstructions";
 
 interface MicTestProps {onPassed: () => void}
 
@@ -111,14 +110,22 @@ export default function MicTest({ onPassed }: MicTestProps) {
     rafRef.current = requestAnimationFrame(measureVolume);
   };
 
-  useEffect(() => {return () => stopRecording()}, []);
+  useEffect(() => () => stopRecording(), []);
 
   return (
-    <div className="flex flex-col items-center space-y-6 md:space-y-8 py-6 md:py-4 px-4 md:px-0">
-      <MicTestInstructions />
-      <MicTestButton isRecording={isRecording} onClick={isRecording ? stopRecording : startRecording} />
-      <VolumeMeter ref={volumeMeterRef} volume={volume} />
-      <RecordingPlayback audioUrl={audioUrl} />
+    <div className="max-w-3xl mx-auto px-4 py-4 w-full space-y-4">
+      <div className="mb-4">
+        <p className="text-xs text-gray-500 px-0.5">
+          Kiểm tra micro và mức âm thanh trước khi thu âm. Nói to để xác nhận micro hoạt động.
+        </p>
+      </div>
+      <MicTestCard
+        isRecording={isRecording}
+        volume={volume}
+        audioUrl={audioUrl}
+        volumeMeterRef={volumeMeterRef}
+        onStartStop={isRecording ? stopRecording : startRecording}
+      />
     </div>
   );
 }

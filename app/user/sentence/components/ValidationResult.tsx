@@ -19,32 +19,28 @@ export default function ValidationResult({
   switch (state.status) {
     case "validating_backend":
       title = "Đang kiểm tra";
-      message = "Đang kiểm tra tự động với server...";
-      icon = <Loader2 className="h-8 w-8 animate-spin" />;
-      containerClass = "bg-blue-50 text-blue-800 border-blue-300";
+      message = "Đang kiểm tra với server…";
+      icon = <Loader2 className="h-5 w-5 animate-spin flex-shrink-0" />;
+      containerClass = "bg-blue-50 text-blue-800 border-blue-200";
       break;
 
     case "frontend_error":
     case "backend_error":
-      title = "✗ Chưa đạt yêu cầu";
+      title = "Chưa đạt yêu cầu";
       message = state.message;
-      icon = <AlertCircle className="h-8 w-8" />;
-      containerClass = "bg-red-50 text-red-800 border-red-300";
+      icon = <AlertCircle className="h-5 w-5 flex-shrink-0" />;
+      containerClass = "bg-red-50 text-red-800 border-red-200";
       break;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="mx-auto max-w-3xl">
-        <div
-          className={`p-6 rounded-3xl flex items-start gap-5 text-lg font-medium shadow-lg border-4 ${containerClass}`}
-        >
-          {icon}
-          <div>
-            <p className="text-xl font-black mb-2">{title}</p>
-            <p className="leading-relaxed text-base md:text-lg">{message}</p>
-          </div>
-        </div>
+    <div
+      className={`rounded-lg border p-3 flex items-start gap-3 text-sm font-medium ${containerClass}`}
+    >
+      {icon}
+      <div className="min-w-0">
+        <p className="font-semibold mb-0.5">{title}</p>
+        <p className="leading-snug text-gray-700">{message}</p>
       </div>
     </div>
   );

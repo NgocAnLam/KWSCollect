@@ -1,24 +1,32 @@
 // app/admin/payments/page.tsx
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getApiBase } from "@/lib/api";
 import { AlertCircle } from "lucide-react";
 import PaymentsHeader from "./components/PaymentsHeader";
 import PaymentsFilters from "./components/PaymentsFilters";
 
-async function getPayments() {
+async function getPayments(): Promise<{ payments: unknown[] }> {
   const session = await getServerSession(authOptions);
   if (!session?.accessToken) throw new Error("Không có quyền truy cập");
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/admin/payment`, {
-    cache: "no-store",
-    headers: {
-      Authorization: `Bearer ${session.accessToken}`,
-      "ngrok-skip-browser-warning": "true",
-    },
-  });
+  const baseUrl = getApiBase();
+  if (!baseUrl) return { payments: [] };
 
-  if (!res.ok) throw new Error("Không tải được danh sách thanh toán");
-  return res.json();
+  try {
+    const res = await fetch(`${baseUrl}/admin/payment`, {
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${session.accessToken}`,
+        "ngrok-skip-browser-warning": "true",
+      },
+    });
+    if (!res.ok) return { payments: [] };
+    const data = await res.json();
+    return { payments: Array.isArray(data?.payments) ? data.payments : [] };
+  } catch {
+    return { payments: [] };
+  }
 }
 
 export default async function PaymentManagement() {

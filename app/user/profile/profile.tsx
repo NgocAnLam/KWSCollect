@@ -1,5 +1,9 @@
 "use client";
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useRef } from "react";
+import { getApiBase } from "@/lib/api";
+import type { RegionType } from "./constants/types";
+import { RECORDING_LOCATIONS } from "./constants/Constants";
 import PersonalInfoSection from "./components/PersonalInfoSection";
 import AgeGenderSection from "./components/AgeGenderSection";
 import RegionLocationSection from "./components/RegionLocationSection";
@@ -8,68 +12,115 @@ import PaymentMethodSelector from "./components/PaymentMethodSelector";
 import MomoPaymentForm from "./components/MomoPaymentForm";
 import BankPaymentForm from "./components/BankPaymentForm";
 
-export default function UserInfoForm({ onCreated, onValidityChange, onRegisterSubmit }: { onCreated: (u: any) => void; onValidityChange?: (v: boolean) => void; onRegisterSubmit?: (fn: () => Promise<void>) => void; }) {
-  const [name, setName] = useState("Lâm Ngọc Ẩn");
+export interface UserInfoFormProps {
+  onCreated: (u: { id: number; session_id?: number }) => void;
+  onValidityChange?: (v: boolean) => void;
+  onRegisterSubmit?: (fn: () => Promise<void>) => void;
+}
+
+export default function UserInfoForm({
+  onCreated,
+  onValidityChange,
+  onRegisterSubmit,
+}: UserInfoFormProps) {
+  const [name, setName] = useState("");
   const [ageRange, setAgeRange] = useState("21-30 tuổi");
-  const [gender, setGender] = useState<'male' | 'female'>('male');
-  const [region, setRegion] = useState<'southeast' | 'southwest' | 'centralsouth' | 'centralhightlands' | 'centralnorth' | 'northwest' | 'northeast' | 'foreigner'>('southeast');
-  const [phone, setPhone] = useState("0355978430");
-  const [location, setLocation] = useState('Phòng yên tĩnh');
-  const [paymentMethod, setPaymentMethod] = useState<'momo' | 'bank' | 'cash' | 'none'>('momo');
-  const [momoNumber, setMomoNumber] = useState('');
-  const [bankName, setBankName] = useState('');
-  const [bankAccountNumber, setBankAccountNumber] = useState('');
-  const [bankAccountName, setBankAccountName] = useState('');
+  const [gender, setGender] = useState<"male" | "female">("male");
+  const [region, setRegion] = useState<RegionType>("southeast");
+  const [phone, setPhone] = useState("");
+  const phoneRef = useRef(phone);
+  const [location, setLocation] = useState<string>(RECORDING_LOCATIONS[0]);
+  const [paymentMethod, setPaymentMethod] = useState<"momo" | "bank" | "cash" | "none">("momo");
+  const paymentMethodRef = useRef(paymentMethod);
+  const [momoNumber, setMomoNumber] = useState("");
+  const momoRef = useRef(momoNumber);
+  const [bankName, setBankName] = useState("");
+  const [bankAccountNumber, setBankAccountNumber] = useState("");
+  const [bankAccountName, setBankAccountName] = useState("");
+  const bankNameRef = useRef(bankName);
+  const bankAccountNumberRef = useRef(bankAccountNumber);
+  const bankAccountNameRef = useRef(bankAccountName);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (paymentMethod === 'momo' && phone.trim()) setMomoNumber(phone.trim()) 
-    else if (paymentMethod !== 'momo') setMomoNumber('');
+    phoneRef.current = phone;
+  }, [phone]);
+  useEffect(() => {
+    momoRef.current = momoNumber;
+  }, [momoNumber]);
+  useEffect(() => {
+    paymentMethodRef.current = paymentMethod;
+  }, [paymentMethod]);
+  useEffect(() => {
+    bankNameRef.current = bankName;
+  }, [bankName]);
+  useEffect(() => {
+    bankAccountNumberRef.current = bankAccountNumber;
+  }, [bankAccountNumber]);
+  useEffect(() => {
+    bankAccountNameRef.current = bankAccountName;
+  }, [bankAccountName]);
+  useEffect(() => {
+    if (paymentMethod === "momo" && phone.trim()) setMomoNumber(phone.trim());
+    else if (paymentMethod !== "momo") setMomoNumber("");
   }, [phone, paymentMethod]);
+
+  const normalizePhone = (raw: string) => {
+    const s = raw.trim().replace(/\D/g, "");
+    if (s.length === 9 && s[0] !== "0") return "0" + s;
+    return s;
+  };
 
   const submit = async () => {
     if (!name.trim()) throw new Error('Vui lòng nhập họ và tên');
-    if (!phone.trim() || phone.length < 9) throw new Error('Số điện thoại không hợp lệ');
+    const currentPhone = (phoneRef.current ?? phone).trim().replace(/\D/g, '');
+    if (currentPhone.length < 9) throw new Error('Số điện thoại không hợp lệ (ít nhất 9 chữ số)');
     if (!ageRange) throw new Error('Vui lòng chọn khoảng tuổi');
     if (!gender) throw new Error('Vui lòng chọn giới tính');
     if (!region) throw new Error('Vui lòng chọn vùng miền');
 
-    if (paymentMethod === 'momo' && !momoNumber.trim()) throw new Error('Vui lòng nhập số Momo');
-    if (paymentMethod === 'bank') {
-      if (!bankName) throw new Error('Vui lòng chọn ngân hàng');
-      if (!bankAccountNumber.trim()) throw new Error('Vui lòng nhập số tài khoản');
-      if (!bankAccountName.trim()) throw new Error('Vui lòng nhập tên chủ tài khoản');
+    const currentPaymentMethod = paymentMethodRef.current ?? paymentMethod;
+    const currentMomo = (momoRef.current ?? momoNumber).trim();
+    const currentBankName = bankNameRef.current ?? bankName;
+    const currentBankAccountNumber = (bankAccountNumberRef.current ?? bankAccountNumber).trim();
+    const currentBankAccountName = (bankAccountNameRef.current ?? bankAccountName).trim();
+    if (currentPaymentMethod === 'momo' && !currentMomo) throw new Error('Vui lòng nhập số Momo');
+    if (currentPaymentMethod === 'bank') {
+      if (!currentBankName) throw new Error('Vui lòng chọn ngân hàng');
+      if (!currentBankAccountNumber) throw new Error('Vui lòng nhập số tài khoản');
+      if (!currentBankAccountName) throw new Error('Vui lòng nhập tên chủ tài khoản');
     }
 
     setLoading(true);
+    const phoneToSend = normalizePhone(phoneRef.current ?? phone);
     const payload = {
       name: name.trim(),
       age_range: ageRange,
       gender,
       region,
-      phone: phone.trim(),
+      phone: phoneToSend,
       location,
-      payment_method: paymentMethod,
+      payment_method: currentPaymentMethod,
       payment_info:
-        paymentMethod === 'momo'
-          ? momoNumber.trim()
-          : paymentMethod === 'bank'
-          ? `${bankName}|${bankAccountNumber}|${bankAccountName}`
+        currentPaymentMethod === 'momo'
+          ? (currentMomo ? normalizePhone(currentMomo) : null)
+          : currentPaymentMethod === 'bank'
+          ? `${currentBankName}|${currentBankAccountNumber}|${currentBankAccountName}`
           : null,
       payment_label:
-        paymentMethod === 'momo'
-          ? `Momo: ${momoNumber}`
-          : paymentMethod === 'bank'
-          ? `${bankName} - ${bankAccountName} (${bankAccountNumber})`
-          : paymentMethod === 'cash'
+        currentPaymentMethod === 'momo'
+          ? (currentMomo ? `Momo: ${normalizePhone(currentMomo)}` : 'Momo')
+          : currentPaymentMethod === 'bank'
+          ? `${currentBankName} - ${currentBankAccountName} (${currentBankAccountNumber})`
+          : currentPaymentMethod === 'cash'
           ? 'Nhận tiền mặt'
           : 'Không nhận tiền',
     };
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/user/profile`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(`${getApiBase()}/user/profile`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -89,7 +140,7 @@ export default function UserInfoForm({ onCreated, onValidityChange, onRegisterSu
 
   const isValid = !!(
     name.trim() &&
-    phone.trim() && phone.trim().length >= 9 &&
+    phone.trim() && phone.trim().replace(/\D/g, '').length >= 9 &&
     ageRange &&
     gender &&
     region &&
@@ -109,78 +160,71 @@ export default function UserInfoForm({ onCreated, onValidityChange, onRegisterSu
   }, [onRegisterSubmit]);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm h-auto max-h-[90vh] p-0 overflow-auto">
-      {/* Container chính giới hạn chiều cao và cho phép cuộn bên trong */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden h-auto max-h-[80vh] flex flex-col">
-        
-        {/* Header gradient cố định */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white flex-shrink-0">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center">
+    <div className="max-w-5xl mx-auto px-4 py-4 w-full space-y-4">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        {/* Hero: Thông tin cá nhân (đồng bộ Bước 2–5) */}
+        <div className="bg-gradient-to-b from-indigo-50 to-white px-4 py-2 border-b border-gray-100">
+          <p className="text-xs font-medium text-indigo-600 uppercase tracking-wide mb-1">
+            Thông tin cá nhân
+          </p>
+          <h2 className="text-lg font-bold text-gray-800 mb-1">
             Đăng ký tham gia thu âm
           </h2>
         </div>
 
-        {/* Nội dung cuộn được - chia thành 2 cột trên md+ */}
-        <div className="p-1 sm:p-2 overflow-y-auto flex-1 text-sm hide-scrollbar">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {/* Left column: personal info */}
-            <div className="space-y-2">
+        {/* Nội dung: 2 cột trên md+ */}
+        <div className="p-4 overflow-y-auto text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* Cột trái: thông tin cá nhân */}
+            <div className="space-y-3">
               <PersonalInfoSection name={name} setName={setName} />
-              <PhoneInput phone={phone} setPhone={setPhone} />
+              <PhoneInput phone={phone} setPhone={(v) => { setPhone(v); phoneRef.current = v; }} />
               <AgeGenderSection ageRange={ageRange} setAgeRange={setAgeRange} gender={gender} setGender={setGender} />
               <RegionLocationSection region={region} setRegion={setRegion} location={location} setLocation={setLocation} />
             </div>
 
-            {/* Right column: payment info (sticky card on md+) */}
-            <div className="space-y-2 md:sticky md:top-4 md:self-start md:w-full md:max-w-sm md:ml-auto bg-white p-2 rounded-lg shadow">
-              <PaymentMethodSelector paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
+            {/* Cột phải: thanh toán (sticky trên md+) */}
+            <div className="space-y-3 md:sticky md:top-4 md:self-start">
+              <div className="bg-gray-50/80 rounded-lg border border-gray-200 p-3 md:max-w-sm">
+                <PaymentMethodSelector paymentMethod={paymentMethod} setPaymentMethod={(v) => { setPaymentMethod(v); paymentMethodRef.current = v; }} />
 
-              {paymentMethod === 'momo' && (
-                <div className="p-2 bg-purple-50 rounded-md border border-purple-200">
-                  <MomoPaymentForm 
-                    momoNumber={momoNumber} 
-                    setMomoNumber={setMomoNumber} 
-                    phone={phone} 
-                  />
-                </div>
-              )}
-
-              {paymentMethod === 'bank' && (
-                <div className="p-2 bg-blue-50 rounded-md border border-blue-200">
-                  <BankPaymentForm
-                    bankName={bankName}
-                    setBankName={setBankName}
-                    bankAccountNumber={bankAccountNumber}
-                    setBankAccountNumber={setBankAccountNumber}
-                    bankAccountName={bankAccountName}
-                    setBankAccountName={setBankAccountName}
-                  />
-                </div>
-              )}
-
-              {paymentMethod === 'cash' && (
-                <div className="p-3 bg-green-50 rounded-md border border-green-200 text-center">
-                  <div className="text-green-600">
-                    <svg className="w-10 h-10 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <p className="text-sm font-bold">Bạn sẽ nhận tiền mặt khi hoàn thành</p>
-                    <p className="mt-1 text-green-700 text-sm">Chúng tôi sẽ thanh toán trực tiếp sau buổi thu âm</p>
+                {paymentMethod === "momo" && (
+                  <div className="mt-3 p-3 bg-white rounded-md border border-gray-200">
+                    <MomoPaymentForm
+                      momoNumber={momoNumber}
+                      setMomoNumber={(v) => { setMomoNumber(v); momoRef.current = v; }}
+                      phone={phone}
+                    />
                   </div>
-                </div>
-              )}
+                )}
 
-              {paymentMethod === 'none' && (
-                <div className="p-3 bg-gray-50 rounded-md border border-gray-200 text-center">
-                  <div className="text-gray-600">
-                    <svg className="w-10 h-10 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.536-5.657a1 1 0 010-1.414l1.414-1.414a1 1 0 00-1.414-1.414l-1.414 1.414-1.414-1.414a1 1 0 00-1.414 1.414l1.414 1.414-1.414 1.414a1 1 0 001.414 1.414l1.414-1.414 1.414 1.414a1 1 0 001.414-1.414L11.414 11l1.414-1.414a1 1 0 000-1.414z" clipRule="evenodd" />
-                    </svg>
-                    <p className="text-sm font-medium">Cảm ơn bạn đã tham gia tình nguyện!</p>
-                    <p className="mt-1 text-sm">Sự đóng góp của bạn rất quý giá ❤️</p>
+                {paymentMethod === "bank" && (
+                  <div className="mt-3 p-3 bg-white rounded-md border border-gray-200">
+                    <BankPaymentForm
+                      bankName={bankName}
+                      setBankName={setBankName}
+                      bankAccountNumber={bankAccountNumber}
+                      setBankAccountNumber={setBankAccountNumber}
+                      bankAccountName={bankAccountName}
+                      setBankAccountName={setBankAccountName}
+                    />
                   </div>
-                </div>
-              )}
+                )}
+
+                {paymentMethod === "cash" && (
+                  <div className="mt-3 p-3 bg-emerald-50/80 rounded-md border border-emerald-200 text-center">
+                    <p className="text-xs font-semibold text-emerald-800">Tiền mặt</p>
+                    <p className="text-xs text-emerald-700 mt-0.5">Bạn sẽ nhận tiền mặt khi hoàn thành thu âm.</p>
+                  </div>
+                )}
+
+                {paymentMethod === "none" && (
+                  <div className="mt-3 p-3 bg-gray-100 rounded-md border border-gray-200 text-center">
+                    <p className="text-xs font-medium text-gray-700">Không nhận tiền</p>
+                    <p className="text-xs text-gray-600 mt-0.5">Cảm ơn bạn đã tham gia tình nguyện.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -1,13 +1,19 @@
 "use client";
+
 import { useEffect, useRef, useState } from "react";
+import { getApiBase } from "@/lib/api";
+import { validateKeywordAudio } from "../utils/validateKeywordAudio";
+import { captureTranscriptWhileRecording, isSpeechRecognitionSupported } from "../utils/speechRecognitionCapture";
+import { validateScript } from "../utils/validateScript";
 
 type RecordStatus = "idle" | "recording" | "processing" | "accepted" | "rejected";
-const REPEATS = 2;
+const REPEATS = process.env.NEXT_PUBLIC_KEYWORD_RECORDING_REPEAT_COUNT ? parseInt(process.env.NEXT_PUBLIC_KEYWORD_RECORDING_REPEAT_COUNT) : 2;
 
 interface RecordItem {
   audioUrl: string | null;
   blob: Blob | null;
   status: RecordStatus;
+  rejectReason?: string;
 }
 
 interface Keyword {
@@ -24,7 +30,7 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
   const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [currentKeywordIdx, setCurrentKeywordIdx] = useState(0);
   const [records, setRecords] = useState<RecordItem[]>(
-    Array(REPEATS).fill(null).map(() => ({ audioUrl: null, blob: null, status: "idle" }))
+    Array(REPEATS).fill(null).map(() => ({ audioUrl: null, blob: null, status: "idle" as RecordStatus }))
   );
   const [completedCounts, setCompletedCounts] = useState<number[]>([]);
   const [volumes, setVolumes] = useState<number[]>(Array(REPEATS).fill(0));
@@ -37,14 +43,18 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
+  const keywordsRef = useRef<Keyword[]>([]);
+  const currentKeywordIdxRef = useRef(0);
+  const transcriptPromiseRef = useRef<Promise<string> | null>(null);
+  keywordsRef.current = keywords;
+  currentKeywordIdxRef.current = currentKeywordIdx;
 
   useEffect(() => {
     const fetchKeywords = async () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/user/keyword`,
-          {headers: {"ngrok-skip-browser-warning": "true"}}
-        );
+        const res = await fetch(`${getApiBase()}/user/keyword`, {
+          headers: { "ngrok-skip-browser-warning": "true" },
+        });
         if (!res.ok) throw new Error(`Không thể tải danh sách từ khóa (HTTP ${res.status})`);
         const response: KeywordListResponse = await res.json();
         setKeywords(response.keywords);
@@ -107,6 +117,8 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
         if (e.data.size > 0) chunks.push(e.data);
       };
 
+      transcriptPromiseRef.current = captureTranscriptWhileRecording(3000).promise;
+
       recorder.onstop = async () => {
         const blob = new Blob(chunks, { type: "audio/webm" });
         const audioUrl = URL.createObjectURL(blob);
@@ -117,12 +129,53 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
           )
         );
 
+        const kw = keywordsRef.current[currentKeywordIdxRef.current];
+        const keywordText = kw?.text ?? "";
+
+        if (isSpeechRecognitionSupported() && keywordText) {
+          const transcript = await Promise.race([
+            transcriptPromiseRef.current ?? Promise.resolve(""),
+            new Promise<string>((r) => setTimeout(() => r(""), 2000)),
+          ]);
+          transcriptPromiseRef.current = null;
+          const scriptValidation = validateScript(transcript, keywordText);
+          if (!scriptValidation.accepted) {
+            setRecords((prev) =>
+              prev.map((r, i) =>
+                i === rowIndex ? { ...r, status: "rejected", rejectReason: scriptValidation.reason } : r
+              )
+            );
+            return;
+          }
+        }
+
+        const validation = await validateKeywordAudio(blob);
+        if (!validation.accepted) {
+          setRecords((prev) =>
+            prev.map((r, i) =>
+              i === rowIndex ? { ...r, status: "rejected", rejectReason: validation.reason } : r
+            )
+          );
+          return;
+        }
+
+        const keywordId = kw?.id;
         const fd = new FormData();
-        fd.append("user_id", String(userId));
-        fd.append("keyword", currentKeyword);
-        fd.append("keyword_id", String(currentKeywordId));
-        fd.append("repeat_index", String(rowIndex + 1));
-        fd.append("file", blob, `kw_${currentKeywordIdx}_${rowIndex}.webm`);
+        const user_id_val = String(userId);
+        const keyword_id_val = keywordId != null ? String(keywordId) : "";
+        const repeat_index_val = String(rowIndex + 1);
+        fd.append("user_id", user_id_val);
+        fd.append("keyword", keywordText);
+        fd.append("keyword_id", keyword_id_val);
+        fd.append("repeat_index", repeat_index_val);
+        fd.append("file", blob, `kw_${currentKeywordIdxRef.current}_${rowIndex}.webm`);
+
+        if (keywordId == null) {
+          setRecords((prev) =>
+            prev.map((r, i) => (i === rowIndex ? { ...r, status: "rejected" } : r))
+          );
+          return;
+        }
 
         try {
           const res = await fetch("/api/user/keyword/upload", {
@@ -134,11 +187,19 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
             let errorMessage = "Upload thất bại";
             try {
               const errorData = await res.json();
-              errorMessage = errorData.error || errorMessage;
+              const raw = errorData.error;
+              if (raw && typeof raw === "object" && "message" in raw) {
+                errorMessage = (raw as { message?: string }).message || errorMessage;
+              } else if (typeof raw === "string") {
+                errorMessage = raw;
+              }
             } catch (e) {
               errorMessage = `Upload thất bại (HTTP ${res.status})`;
             }
-            throw new Error(errorMessage);
+            setRecords((prev) =>
+              prev.map((r, i) => (i === rowIndex ? { ...r, status: "rejected", rejectReason: errorMessage } : r))
+            );
+            return;
           }
 
           const data = await res.json();
@@ -146,7 +207,9 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
 
           setRecords((prev) =>
             prev.map((r, i) =>
-              i === rowIndex ? { ...r, status: accepted ? "accepted" : "rejected" } : r
+              i === rowIndex
+                ? { ...r, status: accepted ? "accepted" : "rejected", rejectReason: accepted ? undefined : (data.reason || "Không được chấp nhận") }
+                : r
             )
           );
 
@@ -157,12 +220,11 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
               return newCounts;
             });
           }
-        } catch (err) {
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Lỗi kết nối";
           console.error("Lỗi upload:", err);
           setRecords((prev) =>
-            prev.map((r, i) =>
-              i === rowIndex ? { ...r, status: "rejected" } : r
-            )
+            prev.map((r, i) => (i === rowIndex ? { ...r, status: "rejected", rejectReason: msg } : r))
           );
         }
       };

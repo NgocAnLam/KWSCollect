@@ -1,5 +1,7 @@
 import { CheckCircle } from "lucide-react";
 
+const REPEATS = process.env.NEXT_PUBLIC_KEYWORD_RECORDING_REPEAT_COUNT ? parseInt(process.env.NEXT_PUBLIC_KEYWORD_RECORDING_REPEAT_COUNT) : 2;
+
 interface Props {
   keywords: { text: string }[];
   completedCounts: number[];
@@ -7,10 +9,8 @@ interface Props {
 }
 
 export default function KeywordTabs({ keywords, completedCounts, currentKeywordIdx }: Props) {
-  const REPEATS = 5;
-
   return (
-    <div className="flex flex-wrap gap-2 md:gap-3 justify-center mb-6 md:mb-10 px-2">
+    <div className="flex flex-wrap gap-1.5 justify-center mb-4 px-2">
       {keywords.map((kw, idx) => {
         const done = completedCounts[idx] === REPEATS;
         const isCurrent = idx === currentKeywordIdx;
@@ -18,17 +18,19 @@ export default function KeywordTabs({ keywords, completedCounts, currentKeywordI
         return (
           <div
             key={idx}
-            className={`px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl text-sm md:text-base font-medium transition-all ${
+            className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
               done
-                ? "bg-green-100 text-green-800 border-2 border-green-300"
+                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                 : isCurrent
-                ? "bg-indigo-600 text-white shadow-lg md:scale-105"
-                : "bg-gray-100 text-gray-600"
+                ? "bg-indigo-600 text-white border-2 border-indigo-500 shadow-md"
+                : "bg-gray-100 text-gray-600 border border-transparent"
             }`}
           >
-            {kw.text}
-            {done && <CheckCircle className="inline-block ml-1 md:ml-2 w-4 h-4 md:w-5 md:h-5" />}
-            <span className="ml-1 md:ml-2 text-xs md:text-sm opacity-70">({completedCounts[idx]}/{REPEATS})</span>
+            <span>{kw.text}</span>
+            {done && <CheckCircle className="ml-1.5 h-3.5 w-3.5 flex-shrink-0" />}
+            <span className={`ml-1.5 text-xs ${isCurrent ? "text-white/90" : "opacity-75"}`}>
+              ({completedCounts[idx]}/{REPEATS})
+            </span>
           </div>
         );
       })}

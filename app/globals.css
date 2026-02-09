@@ -127,6 +127,14 @@ html, body, #__next { height: 100%; }
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 
 /* Loại bỏ padding nội bộ để waveform và slider đồng bộ */
 #waveform-container ::part(wave) {

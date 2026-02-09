@@ -37,8 +37,16 @@ export async function POST(request: NextRequest) {
         errorText = `HTTP ${response.status}: ${response.statusText}`;
       }
       console.error("Backend upload error:", errorText);
+      let errorPayload: { message: string; detail?: string } = { message: errorText };
+      try {
+        const err = JSON.parse(errorText);
+        if (err?.error?.message) errorPayload = { message: err.error.message, detail: err.error.detail };
+        else if (err?.detail) errorPayload = { message: typeof err.detail === "string" ? err.detail : (err.detail[0]?.msg || errorText) };
+      } catch {
+        // keep errorPayload.message = errorText
+      }
       return NextResponse.json(
-        { error: errorText },
+        { error: errorPayload },
         { status: response.status }
       );
     }

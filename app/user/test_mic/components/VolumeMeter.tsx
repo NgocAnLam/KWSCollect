@@ -5,29 +5,26 @@ export interface VolumeMeterHandle {setVolume: (volume: number) => void;}
 
 const VolumeMeter = forwardRef<VolumeMeterHandle, VolumeMeterProps>(({ volume = 0 }, ref) => {
   const barRef = useRef<HTMLDivElement>(null);
-  const getColor = () => {
-    if (volume > 30) return "bg-green-500";
-    if (volume > 10) return "bg-yellow-500";
-    return "bg-red-500";
-  };
-
   useImperativeHandle(ref, () => ({
     setVolume: (vol: number) => {
       if (barRef.current) barRef.current.style.width = `${Math.min(100, vol)}%`;
     },
   }));
 
+  const barColor =
+    volume > 30 ? "bg-emerald-500" : volume > 10 ? "bg-amber-500" : "bg-gray-300";
+
   return (
-    <div className="w-full max-w-md">
-      <div className="flex justify-between text-sm mb-1">
+    <div className="w-full max-w-md mx-auto">
+      <div className="flex items-center justify-between text-xs text-gray-600 mb-1.5 px-0.5">
         <span>Mức âm thanh</span>
-        <span>{Math.round(volume)}%</span>
+        <span className="font-medium tabular-nums">{Math.round(volume)}%</span>
       </div>
-      <div className="h-5 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
         <div
           ref={barRef}
-          className={`h-full transition-all duration-75 ${getColor()} `}
-          style={{ width: `${volume}%` }}
+          className={`h-full transition-[height,background-color] duration-75 rounded-full ${barColor}`}
+          style={{ width: `${Math.min(100, volume)}%` }}
         />
       </div>
     </div>

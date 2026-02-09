@@ -1,4 +1,4 @@
-import { Mic, MapPin } from 'lucide-react';
+import { Map, MapPin } from 'lucide-react';
 import { RegionType } from '../constants/Constants';
 
 interface RegionLocationSectionProps {
@@ -18,11 +18,15 @@ export default function RegionLocationSection({
     <>
       {/* Vùng miền */}
       <div className="relative">
-        <Mic className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+        <Map className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-400 pointer-events-none" aria-hidden />
+        <label htmlFor="profile-region" className="sr-only">Vùng miền</label>
         <select
+          id="profile-region"
+          name="region"
           value={region}
           onChange={(e) => setRegion(e.target.value as RegionType)}
-          className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none appearance-none text-sm"
+          aria-label="Vùng miền"
+          className="w-full pl-8 pr-7 py-1.5 border border-gray-300 rounded-md focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none appearance-none text-sm"
         >
           <option value="" disabled>Chọn vùng miền</option>
           <option value="southeast">Đông Nam Bộ</option>
@@ -37,12 +41,16 @@ export default function RegionLocationSection({
       </div>
 
       {/* Địa điểm ghi âm */}
-      <div className="relative mt-3">
-        <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+      <div className="relative mt-2">
+        <MapPin className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-400 pointer-events-none" aria-hidden />
+        <label htmlFor="profile-location" className="sr-only">Địa điểm ghi âm</label>
         <select
+          id="profile-location"
+          name="location"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+          aria-label="Địa điểm ghi âm"
+          className="w-full pl-8 pr-2.5 py-1.5 border border-gray-300 rounded-md focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none text-sm"
         >
           <option>Phòng yên tĩnh</option>
           <option>Phòng có tiếng ồn nhẹ</option>

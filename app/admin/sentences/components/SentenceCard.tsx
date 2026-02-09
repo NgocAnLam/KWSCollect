@@ -93,7 +93,7 @@ export default function SentenceCard({ sentence }: Props) {
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-2xl transition-all duration-300">
+    <div className="bg-white rounded-3xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
       <div className="p-8">
         <div className="flex items-start justify-between mb-6">
           <div className="flex-1">

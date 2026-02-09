@@ -58,7 +58,7 @@ export default function CreateKeywordModal({ createKeyword }: { createKeyword: (
                   required
                   minLength={1}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Nhập từ khóa..."
+                  placeholder="Nhập từ khóa…"
                 />
               </div>
 
@@ -76,7 +76,7 @@ export default function CreateKeywordModal({ createKeyword }: { createKeyword: (
                   disabled={isPending}
                   className="px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition disabled:opacity-70"
                 >
-                  {isPending ? "Đang tạo..." : "Tạo"}
+                  {isPending ? "Đang tạo…" : "Tạo"}
                 </button>
               </div>
             </form>

@@ -1,23 +1,16 @@
-import StatsGrid from "./components/StatsGrid";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import DashboardCharts from "./components/DashboardCharts";
 import { getAdminStats } from "./lib/fetchStats";
 
 export default async function AdminDashboardPage() {
+  const session = await getServerSession(authOptions);
   const stats = await getAdminStats();
-
-  const totalUser = stats.user_count;
-  const totalKeywords = stats.keyword_count;
-  const totalSentences = stats.sentence_count;
-  const totalPendingPayment = totalUser - stats.paid_user - stats.rejected_user;
+  const accessToken = (session?.accessToken as string) ?? "";
 
   return (
     <div className="space-y-8">
-      {/* Thống kê */}
-      <StatsGrid
-        totalUser={totalUser}
-        totalKeywords={totalKeywords}
-        totalSentences={totalSentences}
-        totalPendingPayment={totalPendingPayment}
-      />
+      <DashboardCharts initialStats={stats} accessToken={accessToken} />
     </div>
   );
 }

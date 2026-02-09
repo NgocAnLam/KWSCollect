@@ -12,17 +12,23 @@ export default function MomoPaymentForm({
   const isAuto = phone && momoNumber === phone;
 
   return (
-    <div className="relative bg-pink-50 border-2 border-pink-200 rounded-lg p-3">
-      <Phone className="absolute left-4 top-3 h-4 w-4 text-pink-600" />
+    <div className="relative">
+      <Phone className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-400 pointer-events-none" aria-hidden />
+      <label htmlFor="profile-momo" className="sr-only">Số tài khoản Momo</label>
       <input
+        id="profile-momo"
+        name="momo_number"
+        type="tel"
+        inputMode="numeric"
         value={momoNumber}
-        onChange={(e) => setMomoNumber(e.target.value.replace(/\D/g, '').slice(0, 11))}
-        placeholder="Số Momo"
-        className="w-full pl-12 pr-3 py-2 bg-transparent font-semibold text-pink-700 placeholder-pink-500 outline-none text-sm"
+        onChange={(e) => setMomoNumber(e.target.value.replace(/\D/g, "").slice(0, 11))}
+        placeholder="Số tài khoản Momo…"
+        spellCheck={false}
+        className="w-full pl-8 pr-16 py-1.5 border border-gray-300 rounded-md bg-white text-gray-800 placeholder-gray-400 focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none text-sm"
       />
       {isAuto && (
-        <span className="absolute right-3 top-3 text-[10px] font-bold bg-pink-200 text-pink-800 px-2 py-0.5 rounded-full">
-          TỰ ĐỘNG
+        <span className="absolute right-2 top-2 text-[10px] font-medium bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">
+          Tự động
         </span>
       )}
     </div>

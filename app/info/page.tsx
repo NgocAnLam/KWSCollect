@@ -63,7 +63,7 @@ export default function InfoPage() {
                 {teamMembers.map((member, index) => (
                 <div
                     key={index}
-                    className="bg-white rounded-xl md:rounded-2xl shadow-md md:shadow-lg overflow-hidden hover:shadow-xl md:hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+                    className="bg-white rounded-xl md:rounded-2xl shadow-md md:shadow-lg overflow-hidden hover:shadow-xl md:hover:shadow-2xl transition-shadow duration-300 transform hover:-translate-y-1"
                 >
                     <div className="relative h-64 md:h-80 w-full">
                     <Image

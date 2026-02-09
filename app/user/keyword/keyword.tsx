@@ -1,20 +1,28 @@
 "use client";
+import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useKeywordRecorder } from "./hooks/useKeywordRecorder";
 import KeywordProgress from "./components/KeywordProgress";
 import KeywordTabs from "./components/KeywordTabs";
 import KeywordCard from "./components/KeywordCard";
+import { upsertProgress } from "../lib/sessionApi";
 
-type Props = { userId: number | null; onComplete?: () => void };
+type Props = { userId: number | null; sessionId: number | null; onComplete?: () => void };
 
-export default function KeywordRecorder({ userId, onComplete }: Props) {
+export default function KeywordRecorder({ userId, sessionId, onComplete }: Props) {
   const recorder = useKeywordRecorder(userId, onComplete);
+
+  useEffect(() => {
+    if (userId == null || sessionId == null) return;
+    const pct = recorder.progressPercent ?? 0;
+    upsertProgress(userId, sessionId, "keyword", pct).catch(() => {});
+  }, [userId, sessionId, recorder.progressPercent]);
 
   if (recorder.loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12 md:py-20 px-4">
         <Loader2 className="w-10 h-10 md:w-12 md:h-12 animate-spin text-indigo-600" />
-        <p className="mt-4 text-base md:text-lg text-gray-700">Đang tải danh sách từ khóa...</p>
+        <p className="mt-4 text-base md:text-lg text-gray-700">Đang tải danh sách từ khóa…</p>
       </div>
     );
   }
@@ -29,7 +37,7 @@ export default function KeywordRecorder({ userId, onComplete }: Props) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 md:py-6 w-full">
+    <div className="max-w-3xl mx-auto px-4 py-4 w-full space-y-4">
       <KeywordProgress {...recorder} />
       <KeywordTabs {...recorder} />
       <KeywordCard

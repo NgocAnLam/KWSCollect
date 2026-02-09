@@ -1,4 +1,4 @@
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff } from "lucide-react";
 
 interface MicTestButtonProps {
   isRecording: boolean;
@@ -8,14 +8,26 @@ interface MicTestButtonProps {
 export default function MicTestButton({ isRecording, onClick }: MicTestButtonProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`p-8 rounded-full text-white transition shadow-xl ${
+      aria-label={isRecording ? "Dừng ghi âm" : "Bắt đầu thu âm"}
+      className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-medium text-white transition-colors shadow-sm ${
         isRecording
-          ? "bg-red-500 animate-pulse"
-          : "bg-blue-600 hover:bg-blue-700"
+          ? "bg-red-600 animate-pulse hover:bg-red-700"
+          : "bg-indigo-600 hover:bg-indigo-700"
       }`}
     >
-      {isRecording ? <Mic size={32} /> : <MicOff size={32} />}
+      {isRecording ? (
+        <>
+          <MicOff className="h-5 w-5" />
+          Đang ghi… (bấm dừng)
+        </>
+      ) : (
+        <>
+          <Mic className="h-5 w-5" />
+          Bắt đầu thu âm
+        </>
+      )}
     </button>
   );
 }

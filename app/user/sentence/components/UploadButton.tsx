@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import { Upload } from "lucide-react";
-import { ValidationState } from "../sentence"; // Đảm bảo import đúng path
+import { getApiBase } from "@/lib/api";
 
 // Định nghĩa type cho các props
 type Props = {
@@ -52,9 +52,7 @@ export default function UploadButton({
       fd.append("file", audioBlob, "recording.webm");
 
       // Gửi yêu cầu upload lên server
-      await axios.post(`${process.env.NEXT_PUBLIC_SERVER_URL}/user/sentence/upload`, fd);
-
-      alert("Upload thành công! Chuẩn bị sang câu tiếp theo...");
+      await axios.post(`${getApiBase()}/user/sentence/upload`, fd);
       onSuccess(); // Thực hiện hành động khi upload thành công
     } catch (err: any) {
       alert("Upload thất bại: " + (err.response?.data?.message || "Lỗi server"));
@@ -63,16 +61,15 @@ export default function UploadButton({
     }
   };
 
-  // Render button upload
   return (
     <div className="flex justify-center">
       <button
+        type="button"
         onClick={uploadRecording}
-        disabled={!validation?.valid || isUploading} // Disabled nếu không hợp lệ hoặc đang upload
-        className="py-1 px-5 inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-3xl font-bold text-1xl hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-2xl flex items-center justify-center gap-5"
+        disabled={!validation?.valid || isUploading}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
       >
-        <Upload className="h-9 w-9" />
-        {isUploading ? "Đang upload..." : "Upload bản thu & Sang câu tiếp theo"}
+        {isUploading ? "Đang gửi…" : "Câu tiếp theo"}
       </button>
     </div>
   );

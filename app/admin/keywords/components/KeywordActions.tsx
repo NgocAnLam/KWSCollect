@@ -1,14 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import type { Keyword } from "./KeywordTable";
+
+type Props = {
+  keyword: Keyword;
+  updateKeyword: (formData: FormData) => Promise<void>;
+  deleteKeyword: (id: number) => Promise<void>;
+};
 
 export default function KeywordActions({
   keyword,
   updateKeyword,
   deleteKeyword,
-}: any) {
+}: Props) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(keyword.text);
+
+  const sentenceCount = (keyword as Record<string, unknown>).sentence_count ?? keyword.sentence_count ?? 0;
+  const canUpdate = sentenceCount === 0;
 
   if (editing) {
     return (
@@ -46,13 +56,19 @@ export default function KeywordActions({
 
   return (
     <div className="flex gap-4">
-      <button
-        onClick={() => setEditing(true)}
-        className="text-indigo-600 hover:text-indigo-800 text-xl"
-        title="Sửa"
-      >
-        ✏️
-      </button>
+      {canUpdate ? (
+        <button
+          onClick={() => setEditing(true)}
+          className="text-indigo-600 hover:text-indigo-800 text-xl"
+          title="Sửa"
+        >
+          ✏️
+        </button>
+      ) : (
+        <span className="text-gray-400 text-sm" title="Keyword đã được dùng trong sentence, không thể cập nhật">
+          —
+        </span>
+      )}
 
       <button
         onClick={() => {

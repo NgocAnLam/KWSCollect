@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Loader2 } from "lucide-react";
 import axios from "axios";
-import ProgressBar from "./components/ProgressBar";
-import SentenceDisplay from "./components/SentenceDisplay";
-import RecordingControls from "./components/RecordingControls";
-import WaveformPlayer from "./components/WaveformPlayer";
-import ValidationResult from "./components/ValidationResult";
-import UploadButton from "./components/UploadButton";
+import { getApiBase } from "@/lib/api";
+import SentenceProgress from "./components/SentenceProgress";
+import SentenceTabs from "./components/SentenceTabs";
+import SentenceCard from "./components/SentenceCard";
 import CompletionMessage from "./components/CompletionMessage";
+import { validateSentenceAudio } from "./utils/validateSentenceAudio";
+import { validateSentenceScript } from "../keyword/utils/validateScript";
+import { isSpeechRecognitionSupported } from "../keyword/utils/speechRecognitionCapture";
+import { upsertProgress } from "../lib/sessionApi";
 
 /* =======================
    Types
@@ -35,7 +38,15 @@ type BackendValidationResult = {
   suggested_end?: number;
 };
 
-export default function SentenceRecorder({ userId }: { userId: number | null }) {
+export default function SentenceRecorder({
+  userId,
+  sessionId,
+  onComplete,
+}: {
+  userId: number | null;
+  sessionId?: number | null;
+  onComplete?: () => void;
+}) {
   const [sentences, setSentences] = useState<Sentence[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -61,10 +72,9 @@ export default function SentenceRecorder({ userId }: { userId: number | null }) 
 
     const fetchSentences = async () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/user/sentence/assign/${userId}`,
-          { headers: { "ngrok-skip-browser-warning": "true" } }
-        );
+        const res = await fetch(`${getApiBase()}/user/sentence/assign/${userId}`, {
+          headers: { "ngrok-skip-browser-warning": "true" },
+        });
 
         if (!res.ok) throw new Error("Không thể tải danh sách câu");
 
@@ -93,39 +103,16 @@ export default function SentenceRecorder({ userId }: { userId: number | null }) 
     resetRecording();
   }, [currentIdx]);
 
-  const validateFrontend = async (blob: Blob): Promise<boolean> => {
-    try {
-      const buffer = await blob.arrayBuffer();
-      const ctx = new AudioContext();
-      const audio = await ctx.decodeAudioData(buffer);
-
-      if (audio.duration < 5) {
-        setValidationState({
-          status: "frontend_error",
-          message: `Bản thu quá ngắn (${audio.duration.toFixed(1)}s). Cần ≥ 5s.`,
-        });
-        return false;
-      }
-
-      const data = audio.getChannelData(0);
-      const rms = Math.sqrt(data.reduce((s, x) => s + x * x, 0) / data.length);
-
-      if (rms < 0.01) {
-        setValidationState({
-          status: "frontend_error",
-          message: "Bản thu quá yên lặng, vui lòng đọc to và rõ hơn.",
-        });
-        return false;
-      }
-
-      return true;
-    } catch {
+  const validateFrontendAudio = async (blob: Blob): Promise<boolean> => {
+    const result = await validateSentenceAudio(blob);
+    if (!result.accepted) {
       setValidationState({
         status: "frontend_error",
-        message: "Lỗi xử lý âm thanh trên trình duyệt.",
+        message: result.reason ?? "Bản thu chưa đạt yêu cầu.",
       });
       return false;
     }
+    return true;
   };
 
   const validateBackend = async (blob: Blob, sentenceId: number) => {
@@ -137,7 +124,7 @@ export default function SentenceRecorder({ userId }: { userId: number | null }) 
       fd.append("sentence_id", String(sentenceId));
 
       const { data } = await axios.post<BackendValidationResult>(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/user/sentence/validate`,
+        `${getApiBase()}/user/sentence/validate`,
         fd
       );
 
@@ -161,14 +148,32 @@ export default function SentenceRecorder({ userId }: { userId: number | null }) 
     }
   };
 
-  const handleRecordingComplete = async (blob: Blob) => {
+  const handleRecordingComplete = async (
+    blob: Blob,
+    transcriptPromise: Promise<string> | null
+  ) => {
     resetRecording();
     setAudioBlob(blob);
     setAudioUrl(URL.createObjectURL(blob));
 
     if (!currentSentence) return;
 
-    const ok = await validateFrontend(blob);
+    if (isSpeechRecognitionSupported() && currentSentence.text && transcriptPromise) {
+      const transcript = await Promise.race([
+        transcriptPromise,
+        new Promise<string>((r) => setTimeout(() => r(""), 5000)),
+      ]);
+      const scriptValidation = validateSentenceScript(transcript, currentSentence.text);
+      if (!scriptValidation.accepted) {
+        setValidationState({
+          status: "frontend_error",
+          message: scriptValidation.reason ?? "Bạn đọc không đúng nội dung câu.",
+        });
+        return;
+      }
+    }
+
+    const ok = await validateFrontendAudio(blob);
     if (!ok) return;
 
     await validateBackend(blob, currentSentence.id);
@@ -178,19 +183,40 @@ export default function SentenceRecorder({ userId }: { userId: number | null }) 
     if (!isLastSentence) setCurrentIdx((i) => i + 1);
   };
 
+  const completedCount = completed.size;
+  const progressPercent = sentences.length > 0 ? Math.round((completedCount / sentences.length) * 100) : 0;
+  const allSentencesDone = sentences.length > 0 && completedCount === sentences.length;
+
+  useEffect(() => {
+    if (userId == null || sessionId == null || sentences.length === 0) return;
+    upsertProgress(userId, sessionId, "sentence", progressPercent).catch(() => {});
+  }, [userId, sessionId, sentences.length, progressPercent]);
+
+  useEffect(() => {
+    if (allSentencesDone && onComplete) onComplete();
+  }, [allSentencesDone, onComplete]);
+
+  if (!userId) return null;
+
   if (!sentences.length) {
-    return <p className="text-center text-gray-500">Đang tải danh sách câu...</p>;
+    return (
+      <div className="flex flex-col items-center justify-center py-12 md:py-20 px-4">
+        <Loader2 className="w-10 h-10 md:w-12 md:h-12 animate-spin text-indigo-600" />
+        <p className="mt-4 text-base md:text-lg text-gray-700">Đang tải danh sách câu…</p>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-5xl mx-auto bg-white rounded-3xl">
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-2 text-white">
-        <ProgressBar current={currentIdx + 1} total={sentences.length} />
-      </div>
-
-      <SentenceDisplay sentence={currentSentence} />
-
-      <RecordingControls
+    <div className="max-w-5xl mx-auto px-4 py-4 w-full space-y-4">
+      <SentenceProgress
+        completedCount={completedCount}
+        totalSentences={sentences.length}
+        progressPercent={progressPercent}
+      />
+      <SentenceTabs sentences={sentences} completed={completed} currentIdx={currentIdx} />
+      <SentenceCard
+        sentence={currentSentence}
         audioBlob={audioBlob}
         setAudioBlob={setAudioBlob}
         setAudioUrl={setAudioUrl}
@@ -198,40 +224,22 @@ export default function SentenceRecorder({ userId }: { userId: number | null }) 
         isPlaying={isPlaying}
         onPlayToggle={() => setIsPlaying((p) => !p)}
         onRecordingComplete={handleRecordingComplete}
+        range={range}
+        setRange={setRange}
+        validationState={validationState}
+        backendValidation={backendValidation}
+        isUploading={isUploading}
+        setIsUploading={setIsUploading}
+        userId={userId}
+        isLastSentence={isLastSentence}
+        isCurrentCompleted={isCompleted}
+        allSentencesDone={allSentencesDone}
+        onUploadSuccess={() => {
+          setCompleted((s) => new Set(s).add(currentSentence.id));
+          nextSentence();
+        }}
       />
-
-      {audioBlob && backendValidation?.valid && (
-        <WaveformPlayer
-          audioBlob={audioBlob}
-          range={range}
-          setRange={setRange}
-          keyword={currentSentence.keyword}
-          isPlaying={isPlaying}
-          onPlayToggle={() => setIsPlaying((p) => !p)}
-        />
-      )}
-
-      {audioBlob && (
-        <>
-          <ValidationResult state={validationState} />
-
-          <UploadButton
-            userId={userId}
-            sentenceId={currentSentence.id}
-            audioBlob={audioBlob}
-            range={range}
-            validation={backendValidation}
-            isUploading={isUploading} // Truyền isUploading vào đây
-            setIsUploading={setIsUploading} // Truyền setIsUploading vào đây
-            onSuccess={() => {
-              setCompleted((s) => new Set(s).add(currentSentence.id));
-              nextSentence();
-            }}
-          />
-        </>
-      )}
-
-      {isLastSentence && isCompleted && <CompletionMessage />}
+      {/* {isLastSentence && isCompleted && <CompletionMessage />} */}
     </div>
   );
 }

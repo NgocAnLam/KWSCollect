@@ -8,8 +8,9 @@ import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 
 type Props = {
-  // audioUrl: string | null;
-  audioBlob: Blob | null;
+  /** Khi có audioUrl (bước kiểm tra chéo) dùng URL; không thì dùng audioBlob (bước thu âm). */
+  audioUrl?: string | null;
+  audioBlob?: Blob | null;
   range: [number, number];
   setRange: (range: [number, number]) => void;
   keyword: string;
@@ -18,13 +19,15 @@ type Props = {
 };
 
 export default function WaveformPlayer({
-  audioBlob,
+  audioUrl = null,
+  audioBlob = null,
   range,
   setRange,
   keyword,
   isPlaying,
   onPlayToggle,
 }: Props) {
+  const hasAudio = !!audioUrl || !!audioBlob;
   const containerRef = useRef<HTMLDivElement>(null); // Wrapper waveform để lấy width
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
@@ -64,10 +67,12 @@ export default function WaveformPlayer({
   }, [range, isReady, duration]);
 
   useEffect(() => {
-    if (!waveformRef.current || !audioBlob) {
+    if (!waveformRef.current || !hasAudio) {
       setIsReady(false);
       return;
     }
+
+    let cancelled = false;
 
     if (wavesurferRef.current) {
       wavesurferRef.current.destroy();
@@ -94,9 +99,30 @@ export default function WaveformPlayer({
       plugins: [regionsPlugin],
     });
 
-    ws.loadBlob(audioBlob);
+    const ignoreAbort = (err: unknown) => {
+      if (!err || typeof err !== "object") return;
+      const e = err as Error;
+      if (e.name === "AbortError" || (e.message && String(e.message).toLowerCase().includes("abort"))) {
+        return;
+      }
+      console.error(err);
+    };
+
+    const loadPromise = audioUrl
+      ? ws.load(audioUrl)
+      : audioBlob
+        ? ws.loadBlob(audioBlob)
+        : null;
+    if (loadPromise && typeof (loadPromise as Promise<unknown>)?.catch === "function") {
+      (loadPromise as Promise<unknown>).catch(ignoreAbort);
+    }
+
+    ws.on("error", (err: unknown) => {
+      ignoreAbort(err);
+    });
 
     ws.on("ready", () => {
+      if (cancelled) return;
       const dur = ws.getDuration() || 15;
       setDuration(dur);
       setIsReady(true);
@@ -104,10 +130,12 @@ export default function WaveformPlayer({
     });
 
     ws.on("audioprocess", () => {
+      if (cancelled) return;
       setCurrentTime(ws.getCurrentTime());
     });
 
     ws.on("seeking", () => {
+      if (cancelled) return;
       setCurrentTime(ws.getCurrentTime());
     });
 
@@ -126,10 +154,11 @@ export default function WaveformPlayer({
     wavesurferRef.current = ws;
 
     return () => {
+      cancelled = true;
       ws.destroy();
       setIsReady(false);
     };
-  }, [audioBlob, memoizedOnPlayToggle]);
+  }, [audioUrl, audioBlob, hasAudio, memoizedOnPlayToggle]);
 
   const updateAllRegions = (ws: WaveSurfer) => {
     const regions = (ws as any).regions;
@@ -197,25 +226,20 @@ export default function WaveformPlayer({
   );
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-purple-50 rounded-3xl p-8 shadow-inner">
-      {/* Wrapper waveform với position relative để overlay absolute */}
-      <div ref={containerRef} id="waveform-container" className="relative mb-8 rounded-2xl overflow-hidden shadow-lg">
+    <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+      <div ref={containerRef} id="waveform-container" className="relative mb-4 rounded-lg overflow-hidden">
         <div ref={waveformRef} className="w-full" />
-
-        {/* Overlay trái - làm mờ phần trước start */}
         <div className="dim-overlay-left absolute top-0 left-0 h-full bg-gray-800 opacity-50 pointer-events-none" />
-
-        {/* Overlay phải - làm mờ phần sau end */}
         <div className="dim-overlay-right absolute top-0 h-full bg-gray-800 opacity-50 pointer-events-none" />
       </div>
 
-      <div className="text-center text-lg font-medium text-gray-700 mb-4">
-        Thời gian hiện tại: {currentTime.toFixed(2)}s / {duration.toFixed(2)}s
-      </div>
+      <p className="text-center text-sm text-gray-600 mb-3">
+        {currentTime.toFixed(2)}s / {duration.toFixed(2)}s
+      </p>
 
-      <div className="space-y-4">
-        <label className="block text-xl font-bold text-gray-800 text-center">
-          Chọn chính xác đoạn chứa từ khóa <span className="text-purple-700">"{keyword}"</span>
+      <div className="space-y-3">
+        <label className="block text-sm font-semibold text-gray-800 text-center">
+          Chọn đoạn chứa từ khóa <span className="text-indigo-700">&quot;{keyword}&quot;</span>
         </label>
 
         <div className="px-0">
@@ -226,33 +250,20 @@ export default function WaveformPlayer({
             step={0.01}
             value={range}
             onChange={handleRangeChange}
-            trackStyle={[{ backgroundColor: "#7c3aed" }]}
+            trackStyle={[{ backgroundColor: "#4f46e5" }]}
             handleStyle={[
-              {
-                borderColor: "#7c3aed",
-                backgroundColor: "#fff",
-                boxShadow: "0 0 0 8px rgba(124,58,237,0.4)",
-                width: "24px",
-                height: "24px",
-              },
-              {
-                borderColor: "#7c3aed",
-                backgroundColor: "#fff",
-                boxShadow: "0 0 0 8px rgba(124,58,237,0.4)",
-                width: "24px",
-                height: "24px",
-              },
+              { borderColor: "#4f46e5", backgroundColor: "#fff", width: "18px", height: "18px" },
+              { borderColor: "#4f46e5", backgroundColor: "#fff", width: "18px", height: "18px" },
             ]}
-            railStyle={{ backgroundColor: "#e5e7eb", height: "8px", borderRadius: "4px" }}
+            railStyle={{ backgroundColor: "#e5e7eb", height: "6px", borderRadius: "4px" }}
           />
         </div>
 
-        <div className="flex justify-between text-lg font-semibold text-gray-700">
+        <div className="flex flex-wrap justify-between gap-2 text-xs font-medium text-gray-700">
           <span>Bắt đầu: {range[0].toFixed(2)}s</span>
           <span>Kết thúc: {range[1].toFixed(2)}s</span>
-          {/* <span>Độ dài: {(range[1] - range[0]).toFixed(2)}s</span> */}
-          <span className={range[1] - range[0] > 2 ? "text-red-600" : "text-green-600"}>
-            Độ dài: {(range[1] - range[0]).toFixed(2)}s {range[1] - range[0] > 2 && "(quá dài, cần ≤ 2s)"}
+          <span className={range[1] - range[0] > 2 ? "text-red-600" : "text-emerald-600"}>
+            Độ dài: {(range[1] - range[0]).toFixed(2)}s {range[1] - range[0] > 2 && "(cần ≤ 2s)"}
           </span>
         </div>
       </div>

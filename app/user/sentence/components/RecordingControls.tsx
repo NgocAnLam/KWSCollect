@@ -1,6 +1,9 @@
 "use client";
 import { useState, useRef } from "react";
 import { Mic, MicOff, Play, Pause, RotateCcw } from "lucide-react";
+import { captureTranscriptWhileRecording } from "../../keyword/utils/speechRecognitionCapture";
+
+const RECORDING_DURATION_MS = 15000;
 
 type Props = {
   audioBlob: Blob | null;
@@ -9,27 +12,32 @@ type Props = {
   resetRecording: () => void;
   isPlaying: boolean;
   onPlayToggle: () => void;
-  onRecordingComplete: (blob: Blob) => void;
+  onRecordingComplete: (blob: Blob, transcriptPromise: Promise<string> | null) => void;
 };
 
 export default function RecordingControls({audioBlob, setAudioBlob, setAudioUrl, resetRecording, isPlaying, onPlayToggle, onRecordingComplete}: Props) {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const transcriptCaptureRef = useRef<ReturnType<typeof captureTranscriptWhileRecording> | null>(null);
 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      transcriptCaptureRef.current = captureTranscriptWhileRecording(RECORDING_DURATION_MS);
+
       const recorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
 
       recorder.ondataavailable = (e) => chunks.push(e.data);
       recorder.onstop = () => {
+        transcriptCaptureRef.current?.stop();
         const blob = new Blob(chunks, { type: "audio/webm" });
         const url = URL.createObjectURL(blob);
         setAudioBlob(blob);
         setAudioUrl(url);
         stream.getTracks().forEach((track) => track.stop());
-        onRecordingComplete(blob);
+        onRecordingComplete(blob, transcriptCaptureRef.current?.promise ?? null);
+        transcriptCaptureRef.current = null;
       };
 
       recorder.start();
@@ -38,7 +46,7 @@ export default function RecordingControls({audioBlob, setAudioBlob, setAudioUrl,
 
       setTimeout(() => {
         if (recorder.state === "recording") recorder.stop();
-      }, 15000);
+      }, RECORDING_DURATION_MS);
     } catch (err) {
       alert("Không thể truy cập microphone. Vui lòng kiểm tra quyền truy cập.");
     }
@@ -53,24 +61,26 @@ export default function RecordingControls({audioBlob, setAudioBlob, setAudioUrl,
 
   if (!audioBlob) {
     return (
-      <div className="flex justify-center gap-6 flex-wrap">
+      <div className="flex justify-center gap-3 flex-wrap">
         <button
+          type="button"
           onClick={startRecording}
           disabled={isRecording}
-          className={`flex items-center gap-3 px-3 py-2 rounded-2xl font-semibold text-lg shadow-lg transition-all ${
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium shadow-sm transition-colors ${
             isRecording
               ? "bg-red-600 text-white animate-pulse"
-              : "bg-emerald-600 text-white hover:bg-emerald-700 hover:scale-105"
+              : "bg-indigo-600 text-white hover:bg-indigo-700"
           }`}
         >
-          {isRecording ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
-          {isRecording ? "Đang ghi âm..." : "Bắt đầu ghi âm"}
+          {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+          {isRecording ? "Đang ghi âm…" : "Bắt đầu ghi âm"}
         </button>
 
         {isRecording && (
           <button
+            type="button"
             onClick={stopRecording}
-            className="flex items-center gap-3 px-3 py-2 bg-gray-600 text-white rounded-2xl font-semibold hover:bg-gray-700 transition shadow-lg"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-md text-sm font-medium hover:bg-gray-700 transition shadow-sm"
           >
             Dừng ghi âm
           </button>
@@ -79,23 +89,24 @@ export default function RecordingControls({audioBlob, setAudioBlob, setAudioUrl,
     );
   }
 
-
   return (
-    <div className="flex justify-center gap-6 flex-wrap">
+    <div className="flex justify-center gap-3 flex-wrap">
       <button
+        type="button"
         onClick={onPlayToggle}
-        className="flex items-center gap-3 px-3 py-2 bg-indigo-600 text-white rounded-2xl font-semibold hover:bg-indigo-700 transition shadow-lg hover:scale-105"
+        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 transition shadow-sm"
       >
-        {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
-        {isPlaying ? "Tạm dừng" : "Nghe lại bản thu"}
+        {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+        {isPlaying ? "Tạm dừng" : "Nghe lại"}
       </button>
 
       <button
+        type="button"
         onClick={resetRecording}
-        className="flex items-center gap-3 px-3 py-2 bg-orange-600 text-white rounded-2xl font-semibold hover:bg-orange-700 transition shadow-lg hover:scale-105"
+        className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-md text-sm font-medium hover:bg-amber-600 transition shadow-sm"
       >
-        <RotateCcw className="h-8 w-8" />
-        Thu lại từ đầu
+        <RotateCcw className="h-5 w-5" />
+        Thu lại
       </button>
     </div>
   );

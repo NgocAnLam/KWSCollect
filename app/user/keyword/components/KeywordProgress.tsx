@@ -9,27 +9,22 @@ export default function KeywordProgress({
   totalRecordings,
   progressPercent,
 }: KeywordProgressProps) {
+  const REPEATS = process.env.NEXT_PUBLIC_KEYWORD_RECORDING_REPEAT_COUNT ? parseInt(process.env.NEXT_PUBLIC_KEYWORD_RECORDING_REPEAT_COUNT) : 2;
   return (
-    <div className="text-center mb-4 md:mb-8">
-      <p className="text-xs md:text-sm text-gray-600 mb-4 md:mb-6 px-2">
-        (Vui lòng nói rõ từ khóa trong tối đa 2 giây. Hệ thống sẽ tự động ghi nhận. Tổng cộng{" "}
-        <strong>{totalRecordings}</strong> bản ghi)
-      </p>
-
-      <div className="max-w-2xl mx-auto mb-4 md:mb-8">
-        <div className="flex justify-between text-xs md:text-sm text-gray-600 mb-2 px-1">
-          <span>Tiến độ tổng thể</span>
-          <span>
-            {totalCompleted}/{totalRecordings} ({progressPercent}%)
-          </span>
-        </div>
-        <div className="h-3 md:h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-          <div
-            className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-500"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+    <div className="mb-4">
+      <div className="flex items-center justify-between text-xs text-gray-600 mb-1.5 px-0.5">
+        <span>Tiến độ: {totalCompleted}/{totalRecordings} bản ghi</span>
+        <span className="font-medium tabular-nums">{progressPercent}%</span>
       </div>
+      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full transition-[width] duration-500 ease-out"
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+      <p className="text-xs text-gray-500 mt-1.5 px-0.5">
+        Nói rõ từ khóa trong ~3 giây. Mỗi từ thu {REPEATS} lần.
+      </p>
     </div>
   );
 }

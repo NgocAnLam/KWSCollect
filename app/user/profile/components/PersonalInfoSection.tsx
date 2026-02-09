@@ -9,12 +9,16 @@ export default function PersonalInfoSection({
 }) {
   return (
     <div className="relative">
-      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+      <User className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-400 pointer-events-none" aria-hidden />
+      <label htmlFor="profile-name" className="sr-only">Họ và tên đầy đủ</label>
       <input
+        id="profile-name"
+        name="name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Họ và tên đầy đủ"
-        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm"
+        placeholder="Họ và tên đầy đủ…"
+        autoComplete="name"
+        className="w-full pl-8 pr-2.5 py-1.5 border border-gray-300 rounded-md focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none text-sm"
       />
     </div>
   );
