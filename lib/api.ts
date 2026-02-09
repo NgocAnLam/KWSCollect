@@ -27,7 +27,7 @@ export async function apiFetch<T = unknown>(
   const res = await fetch(url, {
     ...init,
     headers,
-    body: body !== undefined ? JSON.stringify(body) : init.body,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   }).catch(() => null);
   if (!res?.ok) return null;
   return res.json() as Promise<T>;

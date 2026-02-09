@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import UserInfoForm from "./profile/profile";
 import KeywordRecorder from "./keyword/keyword";
@@ -25,7 +25,7 @@ import {
   computeResumeStep,
 } from "./constants";
 
-export default function UserPage() {
+function UserPageContent() {
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [userId, setUserId] = useState<number | null>(null);
   const [sessionId, setSessionId] = useState<number | null>(null);
@@ -326,5 +326,19 @@ export default function UserPage() {
         {renderContent()}
       </WizardLayout>
     </>
+  );
+}
+
+export default function UserPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[200px] text-gray-500">
+          <span>Đang tải…</span>
+        </div>
+      }
+    >
+      <UserPageContent />
+    </Suspense>
   );
 }

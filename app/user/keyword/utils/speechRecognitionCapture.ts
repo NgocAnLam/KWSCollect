@@ -23,7 +23,7 @@ interface SpeechRecognitionInstance extends EventTarget {
   abort(): void;
   onresult: ((e: SpeechRecognitionEvent) => void) | null;
   onend: (() => void) | null;
-  onerror: ((e: SpeechRecognitionErrorEvent) => void) | null;
+  onerror: ((e: any) => void) | null;
 }
 
 interface SpeechRecognitionEvent {
