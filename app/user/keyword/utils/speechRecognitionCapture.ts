@@ -2,6 +2,14 @@
  * Chạy SpeechRecognition (Web Speech API) song song với ghi âm.
  * Trả về transcript cuối cùng để so sánh với từ khóa (validate script).
  * Lưu ý: Chỉ Chrome/Edge hỗ trợ; Firefox không có SpeechRecognition.
+ *
+ * TRÊN ĐIỆN THOẠI (MOBILE):
+ * - Web Speech API thường KHÔNG detect được khi truy cập qua HTTP (không phải HTTPS).
+ * - Trình duyệt chỉ bật SpeechRecognition trong "secure context" (HTTPS hoặc localhost).
+ * - Khi vào web bằng địa chỉ http://192.168.x.x hoặc http://tên-miền (không SSL)
+ *   thì window.SpeechRecognition / window.webkitSpeechRecognition sẽ là undefined.
+ * - Cách khắc phục: truy cập qua HTTPS (ví dụ https://your-domain.com hoặc tunnel HTTPS như ngrok).
+ * - iOS Safari: hỗ trợ một phần từ 14.5+; Chrome Android: hỗ trợ một phần.
  */
 
 const LANG = "vi-VN";
@@ -50,6 +58,17 @@ interface SpeechRecognitionAlternative {
 
 export function isSpeechRecognitionSupported(): boolean {
   return typeof window !== "undefined" && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+}
+
+/** Lý do Speech Recognition không dùng được (để hiển thị gợi ý cho user). Trả về null nếu đang hỗ trợ. */
+export function getSpeechRecognitionUnsupportedReason(): "secure_context" | "not_supported" | null {
+  if (typeof window === "undefined") return "not_supported";
+  if (window.SpeechRecognition || window.webkitSpeechRecognition) return null;
+  // Trên mobile, API thường bị ẩn khi không dùng HTTPS (secure context).
+  if (typeof window.isSecureContext === "boolean" && !window.isSecureContext) {
+    return "secure_context";
+  }
+  return "not_supported";
 }
 
 export interface TranscriptCapture {

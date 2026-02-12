@@ -27,11 +27,13 @@ export function validateScript(transcript: string, expectedKeyword: string): Scr
     return { accepted: true };
   }
 
-  const transcriptNorm = normalizeForCompare(transcript);
+  const transcriptNorm = normalizeForCompare(transcript).replace(/\.$/, "");
   const keywordNorm = normalizeForCompare(keyword).replace(/\.$/, "");
 
   console.log("transcriptNorm", transcriptNorm);
   console.log("keywordNorm", keywordNorm);
+
+  alert(`transcriptNorm: ${transcriptNorm} - keywordNorm: ${keywordNorm}`);
 
   if (!transcriptNorm) {
     return {
@@ -85,7 +87,7 @@ export function validateSentenceScript(
     return { accepted: true };
   }
 
-  const transcriptNorm = normalizeForCompare(transcript);
+  const transcriptNorm = normalizeForCompare(transcript).replace(/\.$/, "");
   const sentenceNorm = normalizeForCompare(sentence).replace(/[.,"]/g, '');
 
   if (!transcriptNorm) {

@@ -1,16 +1,22 @@
 "use client";
-import { useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, Info } from "lucide-react";
 import { useKeywordRecorder } from "./hooks/useKeywordRecorder";
 import KeywordProgress from "./components/KeywordProgress";
 import KeywordTabs from "./components/KeywordTabs";
 import KeywordCard from "./components/KeywordCard";
 import { upsertProgress } from "../lib/sessionApi";
+import { getSpeechRecognitionUnsupportedReason } from "./utils/speechRecognitionCapture";
 
 type Props = { userId: number | null; sessionId: number | null; onComplete?: () => void };
 
 export default function KeywordRecorder({ userId, sessionId, onComplete }: Props) {
   const recorder = useKeywordRecorder(userId, onComplete);
+  const [speechUnsupportedReason, setSpeechUnsupportedReason] = useState<"secure_context" | "not_supported" | null>(null);
+
+  useEffect(() => {
+    setSpeechUnsupportedReason(getSpeechRecognitionUnsupportedReason());
+  }, []);
 
   useEffect(() => {
     if (userId == null || sessionId == null) return;
@@ -38,6 +44,16 @@ export default function KeywordRecorder({ userId, sessionId, onComplete }: Props
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-4 w-full space-y-4">
+      {speechUnsupportedReason !== null && (
+        <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+          <Info className="w-4 h-4 shrink-0 mt-0.5" />
+          <p>
+            {speechUnsupportedReason === "secure_context"
+              ? "Kiểm tra phát âm tự động chưa bật: trình duyệt yêu cầu truy cập qua HTTPS. Vui lòng mở web bằng địa chỉ https://... (hoặc dùng Chrome/Edge trên máy tính) để bật tính năng này."
+              : "Trên thiết bị/trình duyệt này không hỗ trợ kiểm tra phát âm tự động. Bản ghi vẫn được gửi và chỉ kiểm tra chất lượng âm thanh."}
+          </p>
+        </div>
+      )}
       <KeywordProgress {...recorder} />
       <KeywordTabs {...recorder} />
       <KeywordCard
