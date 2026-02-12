@@ -9,6 +9,8 @@ interface RecordingRowProps {
   volume: number;
   audioUrl: string | null;
   rejectReason?: string;
+  /** Transcript đã chuẩn hóa từ Web Speech API (hiển thị khi rejected). */
+  transcriptDisplay?: string;
   onStartRecording: () => void;
   onRetry: () => void;
   previousRecordStatus?: RecordStatus;
@@ -20,6 +22,7 @@ export default function RecordingRow({
   volume,
   audioUrl,
   rejectReason,
+  transcriptDisplay,
   onStartRecording,
   onRetry,
   previousRecordStatus,
@@ -86,6 +89,11 @@ export default function RecordingRow({
             </div>
             {rejectReason && (
               <p className="text-xs text-red-600 mt-0.5 pl-7 leading-tight">{rejectReason}</p>
+            )}
+            {transcriptDisplay !== undefined && transcriptDisplay !== "" && (
+              <p className="text-xs text-gray-600 mt-1 pl-7 leading-tight">
+                Web Speech nghe được: <span className="font-medium text-gray-800">&quot;{transcriptDisplay}&quot;</span>
+              </p>
             )}
           </div>
         )}

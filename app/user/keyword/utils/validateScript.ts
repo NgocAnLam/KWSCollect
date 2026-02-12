@@ -29,10 +29,8 @@ export function validateScript(transcript: string, expectedKeyword: string): Scr
 
   const transcriptNorm = normalizeForCompare(transcript).replace(/\.$/, "");
   const keywordNorm = normalizeForCompare(keyword).replace(/\.$/, "");
-  console.log("transcriptNorm", transcriptNorm);
-  console.log("keywordNorm", keywordNorm);
-
-  alert(`transcriptNorm: ${transcriptNorm} - keywordNorm: ${keywordNorm}`);
+  
+  console.log(`transcriptNorm: ${transcriptNorm} - keywordNorm: ${keywordNorm}`);
 
   if (!transcriptNorm) {
     return {

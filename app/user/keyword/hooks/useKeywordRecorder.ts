@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { getApiBase } from "@/lib/api";
 import { validateKeywordAudio } from "../utils/validateKeywordAudio";
 import { captureTranscriptWhileRecording, isSpeechRecognitionSupported, isMobile } from "../utils/speechRecognitionCapture";
-import { validateScript } from "../utils/validateScript";
+import { validateScript, normalizeForCompare } from "../utils/validateScript";
 
 type RecordStatus = "idle" | "recording" | "processing" | "accepted" | "rejected";
 const REPEATS = process.env.NEXT_PUBLIC_KEYWORD_RECORDING_REPEAT_COUNT ? parseInt(process.env.NEXT_PUBLIC_KEYWORD_RECORDING_REPEAT_COUNT) : 2;
@@ -14,6 +14,8 @@ interface RecordItem {
   blob: Blob | null;
   status: RecordStatus;
   rejectReason?: string;
+  /** Transcript đã chuẩn hóa từ Web Speech API (để hiển thị khi rejected). */
+  transcriptDisplay?: string;
 }
 
 function createEmptyRecords(): RecordItem[] {
@@ -158,9 +160,12 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
           if (!skipScriptCheck) {
             const scriptValidation = validateScript(transcript, keywordText);
             if (!scriptValidation.accepted) {
+              const transcriptNorm = normalizeForCompare(transcript).replace(/\.$/, "") || transcript.trim();
               setCurrentKeywordRecords((prev) =>
                 prev.map((r, i) =>
-                  i === rowIndex ? { ...r, status: "rejected", rejectReason: scriptValidation.reason } : r
+                  i === rowIndex
+                    ? { ...r, status: "rejected", rejectReason: scriptValidation.reason, transcriptDisplay: transcriptNorm || undefined }
+                    : r
                 )
               );
               return;

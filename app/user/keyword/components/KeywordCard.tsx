@@ -2,7 +2,7 @@ import RecordingRow from "./RecordingRow";
 
 interface KeywordCardProps {
   currentKeyword: string;
-  records: { status: string; audioUrl: string | null; rejectReason?: string }[];
+  records: { status: string; audioUrl: string | null; rejectReason?: string; transcriptDisplay?: string }[];
   volumes: number[];
   startRecording: (rowIndex: number) => void;
   retry: (rowIndex: number) => void;
@@ -40,6 +40,7 @@ export default function KeywordCard({
             volume={volumes[idx]}
             audioUrl={record.audioUrl}
             rejectReason={record.rejectReason}
+            transcriptDisplay={record.transcriptDisplay}
             onStartRecording={() => startRecording(idx)}
             onRetry={() => retry(idx)}
             previousRecordStatus={idx > 0 ? (records[idx - 1].status as "idle" | "recording" | "processing" | "accepted" | "rejected") : undefined}
