@@ -41,9 +41,14 @@ function UserPageContent() {
   const [phoneResumeInput, setPhoneResumeInput] = useState("");
   const [phoneResumeError, setPhoneResumeError] = useState<string | null>(null);
   const [phoneResumeLoading, setPhoneResumeLoading] = useState(false);
+  const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set());
   const profileSubmitRef = React.useRef<(() => Promise<void>) | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  useEffect(() => {
+    setVisitedSteps((prev) => new Set(prev).add(currentStep));
+  }, [currentStep]);
 
   // Mở modal "Tiếp tục phiên trên thiết bị khác" khi vào /user?resume=phone (từ header)
   useEffect(() => {
@@ -118,15 +123,14 @@ function UserPageContent() {
   };
 
   const renderContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
+    if (currentStep === 1) {
+      return (
+        <div className="space-y-6">
           <UserInfoForm
             onCreated={(u: { id: number; session_id?: number }) => {
               setUserId(u.id);
               setUserInfo(u);
               if (u.session_id != null) setSessionId(u.session_id);
-              // Ghi ngay progress Bước 1 = 100 khi đăng ký thành công → resume sẽ hiển thị đúng bước đang dừng (vd. Bước 2)
               if (u.session_id != null) upsertProgress(u.id, u.session_id, "profile", 100);
               if (typeof window !== "undefined") {
                 localStorage.setItem(STORAGE_USER_ID, String(u.id));
@@ -136,36 +140,56 @@ function UserPageContent() {
             onValidityChange={setProfileValid}
             onRegisterSubmit={(fn) => (profileSubmitRef.current = fn)}
           />
-        );
-      case 2:
-        return <MicTest onPassed={() => setMicTestPassed(true)} />;
-      case 3:
-        return (
-          <KeywordRecorder
-            userId={userId!}
-            sessionId={sessionId}
-            onComplete={() => setKeywordRecordingCompleted(true)}
-          />
-        );
-      case 4:
-        return (
-          <SentenceRecorder
-            userId={userId!}
-            sessionId={sessionId}
-            onComplete={() => setSentenceRecordingCompleted(true)}
-          />
-        );
-      case 5:
-        return (
-          <CrossCheckList
-            userId={userId!}
-            sessionId={sessionId}
-            onComplete={() => setCrossCheckCompleted(true)}
-          />
-        );
-      default:
-        return null;
+          <p className="text-center text-sm text-gray-600">
+            Đã có tài khoản và muốn tiếp tục hoàn thành các phần còn lại?{" "}
+            <button
+              type="button"
+              onClick={() => setShowPhoneResumeModal(true)}
+              className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 rounded"
+            >
+              Bấm vào đây
+            </button>
+          </p>
+        </div>
+      );
     }
+    if (userId == null) return null;
+    const show = (step: number) => currentStep === step;
+    const keepMounted = (step: number) => visitedSteps.has(step);
+    return (
+      <>
+        <div className={show(2) ? "block" : "hidden"} aria-hidden={!show(2)}>
+          <MicTest onPassed={() => setMicTestPassed(true)} />
+        </div>
+        {keepMounted(3) && (
+          <div className={show(3) ? "block" : "hidden"} aria-hidden={!show(3)}>
+            <KeywordRecorder
+              userId={userId}
+              sessionId={sessionId}
+              onComplete={() => setKeywordRecordingCompleted(true)}
+            />
+          </div>
+        )}
+        {keepMounted(4) && (
+          <div className={show(4) ? "block" : "hidden"} aria-hidden={!show(4)}>
+            <SentenceRecorder
+              userId={userId}
+              sessionId={sessionId}
+              onComplete={() => setSentenceRecordingCompleted(true)}
+            />
+          </div>
+        )}
+        {keepMounted(5) && (
+          <div className={show(5) ? "block" : "hidden"} aria-hidden={!show(5)}>
+            <CrossCheckList
+              userId={userId}
+              sessionId={sessionId}
+              onComplete={() => setCrossCheckCompleted(true)}
+            />
+          </div>
+        )}
+      </>
+    );
   };
 
   const handleFinish = async () => {
@@ -177,9 +201,14 @@ function UserPageContent() {
 
   const handleResume = () => {
     if (!resumeOffer) return;
-    if (userId && sessionId) startSession(userId, sessionId); // Đánh dấu session in_progress khi tiếp tục
+    if (userId && sessionId) startSession(userId, sessionId);
     if (resumeOffer.fromStep >= 2) setMicTestPassed(true);
     if (resumeOffer.fromStep >= 3) setKeywordRecordingCompleted(true);
+    setVisitedSteps((prev) => {
+      const next = new Set(prev);
+      for (let s = 2; s <= resumeOffer!.fromStep; s++) next.add(s);
+      return next;
+    });
     setCurrentStep(resumeOffer.fromStep);
     setResumeOffer(null);
   };

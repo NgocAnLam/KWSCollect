@@ -16,6 +16,10 @@ interface RecordItem {
   rejectReason?: string;
 }
 
+function createEmptyRecords(): RecordItem[] {
+  return Array(REPEATS).fill(null).map(() => ({ audioUrl: null, blob: null, status: "idle" as RecordStatus }));
+}
+
 interface Keyword {
   id: number;
   text: string;
@@ -29,11 +33,20 @@ interface KeywordListResponse {
 export function useKeywordRecorder(userId: number | null, onComplete?: () => void) {
   const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [currentKeywordIdx, setCurrentKeywordIdx] = useState(0);
-  const [records, setRecords] = useState<RecordItem[]>(
-    Array(REPEATS).fill(null).map(() => ({ audioUrl: null, blob: null, status: "idle" as RecordStatus }))
-  );
+  /** Records per keyword index; mỗi phần tử là REPEATS bản ghi cho keyword đó (để xem/nghe lại khi bấm tab). */
+  const [recordsByKeywordIdx, setRecordsByKeywordIdx] = useState<RecordItem[][]>([]);
   const [completedCounts, setCompletedCounts] = useState<number[]>([]);
   const [volumes, setVolumes] = useState<number[]>(Array(REPEATS).fill(0));
+
+  const records = recordsByKeywordIdx[currentKeywordIdx] ?? createEmptyRecords();
+  const setCurrentKeywordRecords = (fn: (prev: RecordItem[]) => RecordItem[]) => {
+    setRecordsByKeywordIdx((prev) => {
+      const next = prev.slice();
+      const idx = currentKeywordIdxRef.current;
+      next[idx] = fn(next[idx] ?? createEmptyRecords());
+      return next;
+    });
+  };
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +72,7 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
         const response: KeywordListResponse = await res.json();
         setKeywords(response.keywords);
         setCompletedCounts(Array(response.keywords.length).fill(0));
+        setRecordsByKeywordIdx(response.keywords.map(() => createEmptyRecords()));
         setLoading(false);
       } catch (err: any) {
         console.error("Lỗi fetch keywords:", err);
@@ -89,7 +103,7 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
 
   const startRecording = async (rowIndex: number) => {
     cleanup();
-    setRecords((prev) =>
+    setCurrentKeywordRecords((prev) =>
       prev.map((r, i) => (i === rowIndex ? { ...r, status: "recording" } : r))
     );
 
@@ -123,7 +137,7 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
         const blob = new Blob(chunks, { type: "audio/webm" });
         const audioUrl = URL.createObjectURL(blob);
 
-        setRecords((prev) =>
+        setCurrentKeywordRecords((prev) =>
           prev.map((r, i) =>
             i === rowIndex ? { ...r, audioUrl, blob, status: "processing" } : r
           )
@@ -144,7 +158,7 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
           if (!skipScriptCheck) {
             const scriptValidation = validateScript(transcript, keywordText);
             if (!scriptValidation.accepted) {
-              setRecords((prev) =>
+              setCurrentKeywordRecords((prev) =>
                 prev.map((r, i) =>
                   i === rowIndex ? { ...r, status: "rejected", rejectReason: scriptValidation.reason } : r
                 )
@@ -156,7 +170,7 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
 
         const validation = await validateKeywordAudio(blob);
         if (!validation.accepted) {
-          setRecords((prev) =>
+          setCurrentKeywordRecords((prev) =>
             prev.map((r, i) =>
               i === rowIndex ? { ...r, status: "rejected", rejectReason: validation.reason } : r
             )
@@ -176,7 +190,7 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
         fd.append("file", blob, `kw_${currentKeywordIdxRef.current}_${rowIndex}.webm`);
 
         if (keywordId == null) {
-          setRecords((prev) =>
+          setCurrentKeywordRecords((prev) =>
             prev.map((r, i) => (i === rowIndex ? { ...r, status: "rejected" } : r))
           );
           return;
@@ -201,7 +215,7 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
             } catch (e) {
               errorMessage = `Upload thất bại (HTTP ${res.status})`;
             }
-            setRecords((prev) =>
+            setCurrentKeywordRecords((prev) =>
               prev.map((r, i) => (i === rowIndex ? { ...r, status: "rejected", rejectReason: errorMessage } : r))
             );
             return;
@@ -210,7 +224,7 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
           const data = await res.json();
           const accepted = data.accepted === true;
 
-          setRecords((prev) =>
+          setCurrentKeywordRecords((prev) =>
             prev.map((r, i) =>
               i === rowIndex
                 ? { ...r, status: accepted ? "accepted" : "rejected", rejectReason: accepted ? undefined : (data.reason || "Không được chấp nhận") }
@@ -228,7 +242,7 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : "Lỗi kết nối";
           console.error("Lỗi upload:", err);
-          setRecords((prev) =>
+          setCurrentKeywordRecords((prev) =>
             prev.map((r, i) => (i === rowIndex ? { ...r, status: "rejected", rejectReason: msg } : r))
           );
         }
@@ -239,7 +253,7 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
       setTimeout(() => recorder.stop(), 3000);
     } catch (err) {
       alert("Không thể truy cập micro. Vui lòng kiểm tra quyền truy cập.");
-      setRecords((prev) =>
+      setCurrentKeywordRecords((prev) =>
         prev.map((r, i) => (i === rowIndex ? { ...r, status: "idle" } : r))
       );
     }
@@ -262,7 +276,7 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
   };
 
   const retry = (rowIndex: number) => {
-    setRecords((prev) =>
+    setCurrentKeywordRecords((prev) =>
       prev.map((r, i) =>
         i === rowIndex ? { audioUrl: null, blob: null, status: "idle" } : r
       )
@@ -274,16 +288,16 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
     });
   };
 
+  const selectKeyword = (idx: number) => {
+    if (idx >= 0 && idx < keywords.length) {
+      setCurrentKeywordIdx(idx);
+      setVolumes(Array(REPEATS).fill(0));
+    }
+  };
+
   const nextKeyword = () => {
     if (isCurrentDone && currentKeywordIdx < keywords.length - 1) {
       setCurrentKeywordIdx((prev) => prev + 1);
-      setRecords(
-        Array(REPEATS).fill(null).map(() => ({
-          audioUrl: null,
-          blob: null,
-          status: "idle",
-        }))
-      );
       setVolumes(Array(REPEATS).fill(0));
     }
   };
@@ -293,15 +307,7 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
   // Tự động chuyển sang keyword tiếp theo khi hoàn thành keyword hiện tại (nếu có nhiều keyword)
   useEffect(() => {
     if (isCurrentDone && keywords.length > 1 && currentKeywordIdx < keywords.length - 1) {
-      // Tự động chuyển sang keyword tiếp theo
       setCurrentKeywordIdx((prev) => prev + 1);
-      setRecords(
-        Array(REPEATS).fill(null).map(() => ({
-          audioUrl: null,
-          blob: null,
-          status: "idle",
-        }))
-      );
       setVolumes(Array(REPEATS).fill(0));
     }
   }, [isCurrentDone, keywords.length, currentKeywordIdx]);
@@ -338,5 +344,6 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
     startRecording,
     retry,
     nextKeyword,
+    selectKeyword,
   };
 }

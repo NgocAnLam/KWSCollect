@@ -20,14 +20,16 @@ export const STEP_TITLES: Record<Step, string> = {
   5: "Kiểm tra chéo",
 };
 
-/** Xác định bước cần resume từ danh sách progress (bước đầu tiên chưa đạt 100%). */
+/** Xác định bước cần resume: bước đầu tiên chưa đạt 100%. Profile = 100% nghĩa là đã đăng ký → resume từ bước 2. */
 export function computeResumeStep(
-  steps: { step: string; progress: number }[]
+  steps: { step: string; progress: number }[] | undefined
 ): Step {
+  const list = steps ?? [];
   for (let n = 1; n <= 5; n++) {
     const stepName = STEPS_PROGRESS[n as Step];
-    const found = steps.find((s) => s.step === stepName);
-    if (!found || found.progress < 100) return n as Step;
+    const found = list.find((s) => s.step === stepName);
+    const progress = found != null ? Number(found.progress) : 0;
+    if (progress < 100) return n as Step;
   }
   return 5;
 }

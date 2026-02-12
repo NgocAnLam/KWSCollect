@@ -38,8 +38,7 @@ export function HomeCTA({
       className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-base shadow-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 ${className}`}
     >
       <Mic className="w-5 h-5" aria-hidden />
-      {children ?? "Bắt đầu thu âm — Nhận thù lao"}
-      <ArrowRight className="w-4 h-4" aria-hidden />
+      {children ?? "Bắt đầu thu âm"}
     </Link>
   );
 }
