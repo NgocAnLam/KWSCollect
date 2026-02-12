@@ -82,10 +82,9 @@ export default function PaymentForm({ completedUsers, onSuccess }: Props) {
       const session = await sessionRes.json();
       const token = session?.accessToken;
       if (!token) throw new Error("Phiên đăng nhập hết hạn");
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/admin/payment/user/${userId}/detail`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await fetch(`/api/admin/payment/user/${userId}/detail`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error("Không tải được thông tin");
       const data: UserDetail = await res.json();
       setDetail(data);
