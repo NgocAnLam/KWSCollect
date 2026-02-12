@@ -36,19 +36,19 @@ export default function InfoPage() {
     {
       name: "Lâm Ngọc Ẩn",
       role: "Team Member",
-      description: "Học viên cao học",
+      description: "Học viên cao học ngành Hệ thống Thông tin (ĐH CNTT - ĐHQG TPHCM)",
       image: "/members/NgocAn.jpg",
     },
     {
       name: "Lê Anh Quân",
       role: "Team Member",
-      description: "Sinh viên",
+      description: "Sinh viên ngành Mạng máy tính và Truyền thông Dữ liệu (ĐH CNTT - ĐHQG TPHCM)",
       image: "/members/NgocAn.jpg",
     },
     {
       name: "Đỗ Ngọc Tường Vân",
       role: "Team Member",
-      description: "Sinh viên",
+      description: "Sinh viên ngành Mạng máy tính và Truyền thông Dữ liệu (ĐH CNTT - ĐHQG TPHCM)",
       image: "/members/TuongVan.jpg",
     },
   ];
