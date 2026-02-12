@@ -11,7 +11,6 @@ export default function Navigation() {
   const navItems = [
     { href: "/user", label: "User", icon: User },
     { href: "/admin", label: "Admin", icon: Shield },
-    { href: "/info", label: "Info", icon: Info },
   ];
 
   const isUserPage = pathname === "/user" || pathname?.startsWith("/user/");

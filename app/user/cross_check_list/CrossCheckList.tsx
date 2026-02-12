@@ -42,8 +42,9 @@ export default function CrossCheckList({
 
   const currentItem = useMemo(() => items[currentIdx], [items, currentIdx]);
   const total = items.length;
-  const progressPercent = total > 0 ? Math.round((submittedCount / total) * 100) : 0;
+  const progressPercent = total > 0 ? Math.min(100, Math.round((submittedCount / total) * 100)) : 0;
   const allCrossCheckDone = !loading && (total === 0 || submittedCount === total);
+  const showCompletionMessage = total > 0 && submittedCount === total;
 
   useEffect(() => {
     if (allCrossCheckDone && onComplete) onComplete();
@@ -133,21 +134,26 @@ export default function CrossCheckList({
         currentIndex={currentIdx}
         total={total}
         progressPercent={progressPercent}
+        showCompletionHint={showCompletionMessage}
       />
-      <CrossCheckTabs total={total} currentIdx={currentIdx} />
-      <CrossCheckCard
-        item={currentItem}
-        range={range}
-        setRange={setRange}
-        isPlaying={isPlaying}
-        onPlayToggle={() => setIsPlaying((p) => !p)}
-        onPrev={goPrev}
-        onNext={goNext}
-        onSubmit={handleSubmit}
-        canGoPrev={currentIdx > 0}
-        canGoNext={currentIdx < total - 1}
-        submitting={submitting}
-      />
+      <CrossCheckTabs total={total} currentIdx={currentIdx} submittedCount={submittedCount} />
+      {showCompletionMessage ? (
+        <CrossCheckCompletion />
+      ) : (
+        <CrossCheckCard
+          item={currentItem}
+          range={range}
+          setRange={setRange}
+          isPlaying={isPlaying}
+          onPlayToggle={() => setIsPlaying((p) => !p)}
+          onPrev={goPrev}
+          onNext={goNext}
+          onSubmit={handleSubmit}
+          canGoPrev={currentIdx > 0}
+          canGoNext={currentIdx < total - 1}
+          submitting={submitting}
+        />
+      )}
     </div>
   );
 }

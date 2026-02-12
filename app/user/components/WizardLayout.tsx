@@ -243,11 +243,11 @@ export default function WizardLayout({
               Cảm ơn bạn đã tham gia thu thập dữ liệu giọng nói KWS Collection. Chúng tôi đã ghi nhận thông tin. Vui lòng chờ admin xác nhận và chuyển tiền theo phương thức bạn đã đăng ký.
             </p>
             <Link
-              href="/info"
+              href="/"
               className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
             >
               <Home size={18} />
-              Quay lại trang giới thiệu
+              Quay lại trang chủ
             </Link>
           </div>
         </div>

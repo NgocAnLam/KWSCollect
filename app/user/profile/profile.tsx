@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { getApiBase } from "@/lib/api";
+import { trackEvent, TRACK_EVENTS } from "@/lib/tracking";
 import type { RegionType } from "./constants/types";
 import { RECORDING_LOCATIONS } from "./constants/Constants";
 import PersonalInfoSection from "./components/PersonalInfoSection";
@@ -153,6 +154,7 @@ export default function UserInfoForm({
       }
 
       const userData = await res.json();
+      trackEvent(TRACK_EVENTS.USER_STEP1_COMPLETE, { user_id: userData?.id });
       onCreated(userData);
     } catch (err: any) {
       throw err;
