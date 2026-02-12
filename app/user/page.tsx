@@ -234,14 +234,24 @@ function UserPageContent() {
         setPhoneResumeError("Không có phiên thu thập nào đang chờ với SĐT này.");
         return;
       }
-      const fromStep = computeResumeStep(data.steps);
+      const steps = data.steps ?? [];
+      const fromStep = computeResumeStep(steps);
       setUserId(data.user_id);
       setSessionId(data.session_id);
       setUserInfo({ id: data.user_id, name: data.user_name ?? "" });
-      if (typeof window !== "undefined") {
-        localStorage.setItem(STORAGE_USER_ID, String(data.user_id));
-        localStorage.setItem(STORAGE_SESSION_ID, String(data.session_id));
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem(STORAGE_USER_ID, String(data.user_id));
+          localStorage.setItem(STORAGE_SESSION_ID, String(data.session_id));
+        }
+      } catch {
+        // Safari private / quota; vẫn tiếp tục phiên
       }
+      setVisitedSteps((prev) => {
+        const next = new Set(prev);
+        for (let s = 2; s <= fromStep; s++) next.add(s);
+        return next;
+      });
       setResumeOffer({ fromStep, sessionId: data.session_id });
       setShowPhoneResumeModal(false);
       setPhoneResumeInput("");

@@ -47,9 +47,17 @@ export async function getCurrentSession(userId: number): Promise<CurrentSession 
 
 export async function getCurrentSessionByPhone(phone: string): Promise<CurrentSessionByPhone | null> {
   const q = new URLSearchParams({ phone: phone.trim() });
-  const res = await fetch(`${BASE}/user/session/current-by-phone?${q}`).catch(() => null);
+  const res = await fetch(`${BASE}/user/session/current-by-phone?${q}`, {
+    headers: { "ngrok-skip-browser-warning": "true" },
+  }).catch(() => null);
   if (!res?.ok) return null;
-  return res.json();
+  try {
+    const data = await res.json();
+    if (data && typeof data.user_id === "number" && typeof data.session_id === "number") return data as CurrentSessionByPhone;
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 export async function cancelSession(userId: number, sessionId: number): Promise<void> {
