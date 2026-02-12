@@ -12,9 +12,15 @@
  * - iOS Safari: hỗ trợ một phần từ 14.5+; Chrome Android: hỗ trợ một phần.
  */
 
-const LANG = "vi-VN";
+const LANG_DESKTOP = "vi-VN";
+const LANG_MOBILE = "vi"; // Một số engine mobile chỉ có "vi", không có "vi-VN".
 /** Trên mobile, kết quả final thường đến trễ sau stop(); cần chờ lâu hơn. */
 const RECOGNITION_TIMEOUT_AFTER_STOP_MS = 3000;
+
+export function isMobile(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod|webOS|Mobile|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints != null && navigator.maxTouchPoints > 2);
+}
 
 declare global {
   interface Window {
@@ -92,11 +98,12 @@ export function captureTranscriptWhileRecording(durationMs: number): TranscriptC
   let fallbackId: ReturnType<typeof setTimeout> | null = null;
   let stopFn: (() => void) | null = null;
 
+  const lang = isMobile() ? LANG_MOBILE : LANG_DESKTOP;
   const promise = new Promise<string>((resolve) => {
     const recognition = new Recognition() as SpeechRecognitionInstance;
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = LANG;
+    recognition.lang = lang;
 
     let finalTranscript = "";
     /** Trên mobile/Safari thường chỉ có interim, ít hoặc không có final; dùng interim làm fallback. */

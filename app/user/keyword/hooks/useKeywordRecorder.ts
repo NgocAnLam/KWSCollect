@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getApiBase } from "@/lib/api";
 import { validateKeywordAudio } from "../utils/validateKeywordAudio";
-import { captureTranscriptWhileRecording, isSpeechRecognitionSupported } from "../utils/speechRecognitionCapture";
+import { captureTranscriptWhileRecording, isSpeechRecognitionSupported, isMobile } from "../utils/speechRecognitionCapture";
 import { validateScript } from "../utils/validateScript";
 
 type RecordStatus = "idle" | "recording" | "processing" | "accepted" | "rejected";
@@ -139,14 +139,18 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
             new Promise<string>((r) => setTimeout(() => r(""), 4500)),
           ]);
           transcriptPromiseRef.current = null;
-          const scriptValidation = validateScript(transcript, keywordText);
-          if (!scriptValidation.accepted) {
-            setRecords((prev) =>
-              prev.map((r, i) =>
-                i === rowIndex ? { ...r, status: "rejected", rejectReason: scriptValidation.reason } : r
-              )
-            );
-            return;
+          // Trên mobile, Web Speech API thường không trả transcript (onresult không fire). Nếu transcript rỗng thì bỏ qua bước kiểm tra script, chỉ kiểm tra chất lượng âm thanh.
+          const skipScriptCheck = isMobile() && !transcript.trim();
+          if (!skipScriptCheck) {
+            const scriptValidation = validateScript(transcript, keywordText);
+            if (!scriptValidation.accepted) {
+              setRecords((prev) =>
+                prev.map((r, i) =>
+                  i === rowIndex ? { ...r, status: "rejected", rejectReason: scriptValidation.reason } : r
+                )
+              );
+              return;
+            }
           }
         }
 

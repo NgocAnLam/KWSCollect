@@ -10,7 +10,7 @@ import SentenceCard from "./components/SentenceCard";
 import CompletionMessage from "./components/CompletionMessage";
 import { validateSentenceAudio } from "./utils/validateSentenceAudio";
 import { validateSentenceScript } from "../keyword/utils/validateScript";
-import { isSpeechRecognitionSupported, getSpeechRecognitionUnsupportedReason } from "../keyword/utils/speechRecognitionCapture";
+import { isSpeechRecognitionSupported, getSpeechRecognitionUnsupportedReason, isMobile } from "../keyword/utils/speechRecognitionCapture";
 import { upsertProgress } from "../lib/sessionApi";
 
 /* =======================
@@ -168,13 +168,17 @@ export default function SentenceRecorder({
         transcriptPromise,
         new Promise<string>((r) => setTimeout(() => r(""), 5000)),
       ]);
-      const scriptValidation = validateSentenceScript(transcript, currentSentence.text);
-      if (!scriptValidation.accepted) {
-        setValidationState({
-          status: "frontend_error",
-          message: scriptValidation.reason ?? "Bạn đọc không đúng nội dung câu.",
-        });
-        return;
+      // Trên mobile, Web Speech API thường không trả transcript; transcript rỗng thì bỏ qua kiểm tra script.
+      const skipScriptCheck = isMobile() && !transcript.trim();
+      if (!skipScriptCheck) {
+        const scriptValidation = validateSentenceScript(transcript, currentSentence.text);
+        if (!scriptValidation.accepted) {
+          setValidationState({
+            status: "frontend_error",
+            message: scriptValidation.reason ?? "Bạn đọc không đúng nội dung câu.",
+          });
+          return;
+        }
       }
     }
 
