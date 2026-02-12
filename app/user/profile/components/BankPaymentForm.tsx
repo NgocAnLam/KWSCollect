@@ -10,6 +10,7 @@ export default function BankPaymentForm({
   setBankAccountNumber,
   bankAccountName,
   setBankAccountName,
+  bankAccountError,
 }: {
   bankName: string;
   setBankName: (v: string) => void;
@@ -17,6 +18,7 @@ export default function BankPaymentForm({
   setBankAccountNumber: (v: string) => void;
   bankAccountName: string;
   setBankAccountName: (v: string) => void;
+  bankAccountError?: string;
 }) {
   return (
     <div className="space-y-2">
@@ -37,15 +39,18 @@ export default function BankPaymentForm({
         ))}
       </select>
 
-      <label htmlFor="profile-bank-account" className="sr-only">Số tài khoản</label>
-      <input
-        id="profile-bank-account"
-        name="bank_account_number"
-        value={bankAccountNumber}
-        onChange={(e) => setBankAccountNumber(e.target.value.replace(/\D/g, ''))}
-        placeholder="Số tài khoản…"
-        className={inputBase}
-      />
+      <div>
+        <label htmlFor="profile-bank-account" className="sr-only">Số tài khoản</label>
+        <input
+          id="profile-bank-account"
+          name="bank_account_number"
+          value={bankAccountNumber}
+          onChange={(e) => setBankAccountNumber(e.target.value.replace(/\D/g, ''))}
+          placeholder="Số tài khoản…"
+          className={`${inputBase} ${bankAccountError ? "border-red-500" : ""}`}
+        />
+        {bankAccountError && <p className="mt-1 text-xs text-red-600" role="alert">{bankAccountError}</p>}
+      </div>
 
       <label htmlFor="profile-bank-account-name" className="sr-only">Tên chủ tài khoản</label>
       <input

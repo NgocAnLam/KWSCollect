@@ -41,6 +41,7 @@ export default function UserInfoForm({
   const bankAccountNumberRef = useRef(bankAccountNumber);
   const bankAccountNameRef = useRef(bankAccountName);
   const [loading, setLoading] = useState(false);
+  const [duplicateErrors, setDuplicateErrors] = useState<{ phone?: string; momo?: string; bank_account?: string }>({});
 
   useEffect(() => {
     phoneRef.current = phone;
@@ -91,8 +92,30 @@ export default function UserInfoForm({
       if (!currentBankAccountName) throw new Error('Vui lòng nhập tên chủ tài khoản');
     }
 
-    setLoading(true);
+    setDuplicateErrors({});
     const phoneToSend = normalizePhone(phoneRef.current ?? phone);
+    const checkBody: { phone?: string; momo?: string; bank_account?: string } = { phone: phoneToSend };
+    if (currentPaymentMethod === "momo" && currentMomo) checkBody.momo = normalizePhone(currentMomo);
+    if (currentPaymentMethod === "bank" && currentBankAccountNumber) checkBody.bank_account = currentBankAccountNumber;
+
+    const checkRes = await fetch(`${getApiBase()}/user/profile/check-duplicates`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+      body: JSON.stringify(checkBody),
+    });
+    if (checkRes.ok) {
+      const dup = await checkRes.json();
+      if (dup.phone_exists || dup.momo_exists || dup.bank_account_exists) {
+        const errs: { phone?: string; momo?: string; bank_account?: string } = {};
+        if (dup.phone_exists) errs.phone = "Số điện thoại đã được đăng ký. Vui lòng nhập số khác.";
+        if (dup.momo_exists) errs.momo = "Số Momo đã được đăng ký. Vui lòng nhập số khác.";
+        if (dup.bank_account_exists) errs.bank_account = "Số tài khoản ngân hàng đã được đăng ký. Vui lòng nhập số khác.";
+        setDuplicateErrors(errs);
+        throw new Error("Thông tin đã tồn tại. Vui lòng kiểm tra và điền lại số điện thoại / số Momo / số tài khoản.");
+      }
+    }
+
+    setLoading(true);
     const payload = {
       name: name.trim(),
       age_range: ageRange,
@@ -178,7 +201,20 @@ export default function UserInfoForm({
             {/* Cột trái: thông tin cá nhân */}
             <div className="space-y-3">
               <PersonalInfoSection name={name} setName={setName} />
-              <PhoneInput phone={phone} setPhone={(v) => { setPhone(v); phoneRef.current = v; }} />
+              <div>
+                <PhoneInput
+                  phone={phone}
+                  setPhone={(v) => {
+                    setPhone(v);
+                    phoneRef.current = v;
+                    setDuplicateErrors((e) => (e.phone ? { ...e, phone: undefined } : e));
+                  }}
+                  error={duplicateErrors.phone}
+                />
+                {duplicateErrors.phone && (
+                  <p className="mt-1 text-xs text-red-600" role="alert">{duplicateErrors.phone}</p>
+                )}
+              </div>
               <AgeGenderSection ageRange={ageRange} setAgeRange={setAgeRange} gender={gender} setGender={setGender} />
               <RegionLocationSection region={region} setRegion={setRegion} location={location} setLocation={setLocation} />
             </div>
@@ -192,8 +228,13 @@ export default function UserInfoForm({
                   <div className="mt-3 p-3 bg-white rounded-md border border-gray-200">
                     <MomoPaymentForm
                       momoNumber={momoNumber}
-                      setMomoNumber={(v) => { setMomoNumber(v); momoRef.current = v; }}
+                      setMomoNumber={(v) => {
+                        setMomoNumber(v);
+                        momoRef.current = v;
+                        setDuplicateErrors((e) => (e.momo ? { ...e, momo: undefined } : e));
+                      }}
                       phone={phone}
+                      error={duplicateErrors.momo}
                     />
                   </div>
                 )}
@@ -204,9 +245,14 @@ export default function UserInfoForm({
                       bankName={bankName}
                       setBankName={setBankName}
                       bankAccountNumber={bankAccountNumber}
-                      setBankAccountNumber={setBankAccountNumber}
+                      setBankAccountNumber={(v) => {
+                        setBankAccountNumber(v);
+                        bankAccountNumberRef.current = v;
+                        setDuplicateErrors((e) => (e.bank_account ? { ...e, bank_account: undefined } : e));
+                      }}
                       bankAccountName={bankAccountName}
                       setBankAccountName={setBankAccountName}
+                      bankAccountError={duplicateErrors.bank_account}
                     />
                   </div>
                 )}
