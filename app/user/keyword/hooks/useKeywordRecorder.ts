@@ -133,9 +133,10 @@ export function useKeywordRecorder(userId: number | null, onComplete?: () => voi
         const keywordText = kw?.text ?? "";
 
         if (isSpeechRecognitionSupported() && keywordText) {
+          // Trên mobile, recognition trả kết quả chậm sau stop(); cần chờ đủ (≥ RECOGNITION_TIMEOUT_AFTER_STOP_MS).
           const transcript = await Promise.race([
             transcriptPromiseRef.current ?? Promise.resolve(""),
-            new Promise<string>((r) => setTimeout(() => r(""), 2000)),
+            new Promise<string>((r) => setTimeout(() => r(""), 4500)),
           ]);
           transcriptPromiseRef.current = null;
           const scriptValidation = validateScript(transcript, keywordText);

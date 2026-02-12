@@ -13,7 +13,8 @@
  */
 
 const LANG = "vi-VN";
-const RECOGNITION_TIMEOUT_AFTER_STOP_MS = 1500;
+/** Trên mobile, kết quả final thường đến trễ sau stop(); cần chờ lâu hơn. */
+const RECOGNITION_TIMEOUT_AFTER_STOP_MS = 3000;
 
 declare global {
   interface Window {
@@ -98,6 +99,8 @@ export function captureTranscriptWhileRecording(durationMs: number): TranscriptC
     recognition.lang = LANG;
 
     let finalTranscript = "";
+    /** Trên mobile/Safari thường chỉ có interim, ít hoặc không có final; dùng interim làm fallback. */
+    let lastInterimTranscript = "";
     let resolved = false;
 
     const finish = (transcript: string) => {
@@ -110,21 +113,24 @@ export function captureTranscriptWhileRecording(durationMs: number): TranscriptC
       } catch {
         // ignore
       }
-      resolve(transcript.trim());
+      const toResolve = transcript.trim() || lastInterimTranscript.trim();
+      resolve(toResolve);
     };
 
     recognition.onresult = (e: SpeechRecognitionEvent) => {
       const results = e.results;
-      let combined = "";
+      let combinedFinal = "";
+      let combinedAny = "";
       for (let i = 0; i < results.length; i++) {
         const result = results[i];
-        if (!result.isFinal) continue;
         const alt = result[0];
         if (!alt) continue;
         const text = (alt as SpeechRecognitionAlternative).transcript || "";
-        combined += (combined ? " " : "") + text;
+        combinedAny += (combinedAny ? " " : "") + text;
+        if (result.isFinal) combinedFinal += (combinedFinal ? " " : "") + text;
       }
-      if (combined) finalTranscript = combined;
+      if (combinedFinal) finalTranscript = combinedFinal;
+      if (combinedAny) lastInterimTranscript = combinedAny;
     };
 
     recognition.onend = () => {
